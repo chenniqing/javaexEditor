@@ -1,0 +1,43 @@
+{
+  "name": "javaex-editor",
+  "version": "0.1.0",
+  "description": "A framework-agnostic rich text editor inspired by javaex.",
+  "type": "module",
+  "main": "./dist/javaex-editor.umd.cjs",
+  "module": "./dist/javaex-editor.js",
+  "types": "./src/lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/lib/index.d.ts",
+      "import": "./dist/javaex-editor.js",
+      "require": "./dist/javaex-editor.umd.cjs"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "README.md",
+    "src/lib/index.d.ts"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "javascript",
+    "editor",
+    "rich-text",
+    "javaex",
+    "wysiwyg"
+  ],
+  "author": "javaex",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.4.0"
+  },
+  "dependencies": {
+    "mammoth": "^1.12.0"
+  }
+}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+<path d="M8 4.5h6.5L18.5 8v11a1.5 1.5 0 0 1-1.5 1.5H8A1.5 1.5 0 0 1 6.5 19V6A1.5 1.5 0 0 1 8 4.5z"/>
+<path d="M14.5 4.5V8h4"/>
+<text x="7.7" y="16.2" font-family="Arial, Helvetica, sans-serif" fill="currentColor" stroke="none" font-size="6.2" font-weight="700">W</text>
+</svg>
