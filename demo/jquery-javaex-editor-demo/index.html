@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>jQuery javaexEditor Demo</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main class="demo-shell">
+      <aside class="demo-sidebar">
+        <div class="demo-brand">
+          <p>jQuery Demo</p>
+          <h1>javaexEditor</h1>
+        </div>
+        <nav class="demo-nav" id="demoNav" aria-label="示例页面"></nav>
+      </aside>
+      <section class="demo-main">
+        <header class="demo-header">
+          <div>
+            <p class="eyebrow" id="pageEyebrow">Example</p>
+            <h2 id="pageTitle"></h2>
+          </div>
+          <div class="demo-actions" id="pageActions"></div>
+        </header>
+        <div id="demoContent"></div>
+      </section>
+    </main>
+    <script>
+      window.JQUERY_JAVAEX_EDITOR_DEMO_API = "http://127.0.0.1:7001";
+    </script>
+    <script src="./vendor/jquery.min.js"></script>
+    <script src="https://javaex.javaex.cn/javaexEditor/1.0.0/javaex-editor.umd.js"></script>
+    <script src="./vendor/xigua-player.js"></script>
+    <script src="./src/main.js"></script>
+    <script src="./src/pages/default/index.js"></script>
+    <script src="./src/pages/upload-image/index.js"></script>
+    <script src="./src/pages/custom-emoji/index.js"></script>
+    <script src="./src/pages/custom-emoji-only/index.js"></script>
+    <script src="./src/pages/ai/index.js"></script>
+    <script src="./src/pages/xigua-player/index.js"></script>
+    <script src="./src/pages/draft/index.js"></script>
+    <script src="./src/pages/i18n-en/index.js"></script>
+    <script src="./src/pages/i18n-ja/index.js"></script>
+    <script src="./src/pages/viewer/index.js"></script>
+  </body>
+</html>
