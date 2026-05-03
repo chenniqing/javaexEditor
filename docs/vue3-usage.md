@@ -30,7 +30,6 @@ npm install
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { createEditor } from 'javaex-editor';
-import 'javaex-editor/dist/style.css';
 
 const props = defineProps({
   modelValue: { type: String, default: '' },

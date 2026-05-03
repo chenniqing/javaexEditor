@@ -14,6 +14,7 @@
 import { renderIconSvg } from "../assets/icons";
 import { ensureEditorStyles } from "./editor-style";
 import { importWordFile } from "../utils/office";
+import { formatLocaleText, getLocaleValue, resolveLocaleConfig, zhCN } from "../i18n";
 
 // 工具栏下拉项统一在这里定义，渲染和状态同步都复用同一份配置。
 const FONT_OPTIONS = [
@@ -57,42 +58,42 @@ const FORMAT_PREVIEW_STYLE = {
 };
 
 const COLOR_OPTIONS = [
-  { value: "Black", title: "黑色" },
-  { value: "Sienna", title: "赭色" },
-  { value: "DarkOliveGreen", title: "深橄榄绿" },
-  { value: "DarkGreen", title: "深绿色" },
-  { value: "DarkSlateBlue", title: "暗灰蓝色" },
-  { value: "Navy", title: "海军蓝" },
-  { value: "Indigo", title: "靛青色" },
-  { value: "DarkSlateGray", title: "墨绿色" },
-  { value: "DarkRed", title: "深红色" },
-  { value: "DarkOrange", title: "暗橙黄色" },
-  { value: "Olive", title: "橄榄色" },
-  { value: "Green", title: "绿色" },
-  { value: "Teal", title: "水鸭色" },
-  { value: "Blue", title: "蓝色" },
-  { value: "SlateGray", title: "石板灰" },
-  { value: "#EDEEF0", title: "浅灰色" },
-  { value: "Red", title: "红色" },
-  { value: "SandyBrown", title: "沙褐色" },
-  { value: "YellowGreen", title: "黄绿色" },
-  { value: "SeaGreen", title: "海绿色" },
-  { value: "MediumTurquoise", title: "中绿宝石" },
-  { value: "RoyalBlue", title: "皇家蓝" },
-  { value: "Purple", title: "紫色" },
-  { value: "Gray", title: "灰色" },
-  { value: "Magenta", title: "洋红色" },
-  { value: "#e96900", title: "橙色" },
-  { value: "rgb(250, 219, 20)", title: "黄色" },
-  { value: "Lime", title: "酸橙色" },
-  { value: "Cyan", title: "青色" },
-  { value: "DeepSkyBlue", title: "深天蓝色" },
-  { value: "#c7254e", title: "酒红色" },
-  { value: "#f2f2f2", title: "银色" },
-  { value: "Pink", title: "粉色" },
-  { value: "Wheat", title: "浅黄色" },
-  { value: "LemonChiffon", title: "柠檬绸色" },
-  { value: "White", title: "白色" }
+  { value: "Black", titleKey: "Black" },
+  { value: "Sienna", titleKey: "Sienna" },
+  { value: "DarkOliveGreen", titleKey: "DarkOliveGreen" },
+  { value: "DarkGreen", titleKey: "DarkGreen" },
+  { value: "DarkSlateBlue", titleKey: "DarkSlateBlue" },
+  { value: "Navy", titleKey: "Navy" },
+  { value: "Indigo", titleKey: "Indigo" },
+  { value: "DarkSlateGray", titleKey: "DarkSlateGray" },
+  { value: "DarkRed", titleKey: "DarkRed" },
+  { value: "DarkOrange", titleKey: "DarkOrange" },
+  { value: "Olive", titleKey: "Olive" },
+  { value: "Green", titleKey: "Green" },
+  { value: "Teal", titleKey: "Teal" },
+  { value: "Blue", titleKey: "Blue" },
+  { value: "SlateGray", titleKey: "SlateGray" },
+  { value: "#EDEEF0", titleKey: "lightGray" },
+  { value: "Red", titleKey: "Red" },
+  { value: "SandyBrown", titleKey: "SandyBrown" },
+  { value: "YellowGreen", titleKey: "YellowGreen" },
+  { value: "SeaGreen", titleKey: "SeaGreen" },
+  { value: "MediumTurquoise", titleKey: "MediumTurquoise" },
+  { value: "RoyalBlue", titleKey: "RoyalBlue" },
+  { value: "Purple", titleKey: "Purple" },
+  { value: "Gray", titleKey: "Gray" },
+  { value: "Magenta", titleKey: "Magenta" },
+  { value: "#e96900", titleKey: "orange" },
+  { value: "rgb(250, 219, 20)", titleKey: "yellow" },
+  { value: "Lime", titleKey: "Lime" },
+  { value: "Cyan", titleKey: "Cyan" },
+  { value: "DeepSkyBlue", titleKey: "DeepSkyBlue" },
+  { value: "#c7254e", titleKey: "wineRed" },
+  { value: "#f2f2f2", titleKey: "silver" },
+  { value: "Pink", titleKey: "Pink" },
+  { value: "Wheat", titleKey: "Wheat" },
+  { value: "LemonChiffon", titleKey: "LemonChiffon" },
+  { value: "White", titleKey: "White" }
 ];
 
 // 统一颜色值格式。
@@ -229,7 +230,8 @@ function hsvToRgb(h, s, v) {
 
 // 颜色面板顶部保留“重置”和“更多颜色”两个入口。
 // “更多颜色”按钮只显示图标，并固定贴在右侧。
-function renderColorMenuHtml(action, resetLabel, resetIconName) {
+function renderColorMenuHtml(action, resetLabel, resetIconName, t) {
+  const moreLabel = t("colors.more");
   return `
     <div class="javaex-editor-color-section">
       <div class="javaex-editor-color-actions">
@@ -241,8 +243,8 @@ function renderColorMenuHtml(action, resetLabel, resetIconName) {
           type="button"
           class="javaex-editor-color-action javaex-editor-color-action-more"
           data-menu-action="${action}-palette-toggle"
-          aria-label="更多颜色"
-          title="更多颜色"
+          aria-label="${escapeAttribute(moreLabel)}"
+          title="${escapeAttribute(moreLabel)}"
         >
           <span class="javaex-editor-color-action-swatch" aria-hidden="true"></span>
         </button>
@@ -251,52 +253,52 @@ function renderColorMenuHtml(action, resetLabel, resetIconName) {
     <div class="javaex-editor-color-divider"></div>
     <div class="javaex-editor-color-section">
       <div class="javaex-editor-color-grid">
-        ${COLOR_OPTIONS.map((color) => `<button type="button" class="javaex-editor-color-dot" data-menu-action="${action}" data-value="${escapeAttribute(color.value)}" style="background-color:${escapeAttribute(color.value)}" title="${escapeAttribute(color.title)}"></button>`).join("")}
+        ${COLOR_OPTIONS.map((color) => `<button type="button" class="javaex-editor-color-dot" data-menu-action="${action}" data-value="${escapeAttribute(color.value)}" style="background-color:${escapeAttribute(color.value)}" title="${escapeAttribute(t(`colorNames.${color.titleKey}`, color.titleKey))}"></button>`).join("")}
       </div>
     </div>
   `;
 }
 
 const COMBOBOX_ITEMS = {
-  font: { key: "font", label: "字体", menu: "font", defaultLabel: "arial", widthClass: "" },
-  size: { key: "size", label: "字号", menu: "size", defaultLabel: "16", widthClass: "javaex-editor-combobox-size" },
-  format: { key: "format", label: "段落格式", menu: "format", defaultLabel: "p", widthClass: "" }
+  font: { key: "font", labelKey: "combobox.font", menu: "font", defaultLabelKey: "combobox.defaultFont", widthClass: "" },
+  size: { key: "size", labelKey: "combobox.size", menu: "size", defaultLabelKey: "combobox.defaultSize", widthClass: "javaex-editor-combobox-size" },
+  format: { key: "format", labelKey: "combobox.format", menu: "format", defaultLabelKey: "combobox.defaultFormat", widthClass: "" }
 };
 
 const TOOLBAR_ITEM_MAP = {
-  image: { key: "image", label: "图片", iconName: "uploadImage", menu: true },
-  video: { key: "video", label: "视频", iconName: "uploadVideo" },
-  importWord: { key: "importWord", label: "导入 Word", iconName: "word" },
-  fullscreen: { key: "fullscreen", label: "全屏", iconName: "fullscreen" },
-  link: { key: "link", label: "超链接", iconName: "link" },
-  unlink: { key: "unlink", label: "去除超链接", iconName: "unlink" },
-  undo: { key: "undo", label: "撤销", iconName: "undo" },
-  redo: { key: "redo", label: "重做", iconName: "redo" },
-  bold: { key: "bold", label: "加粗", iconName: "bold" },
-  italic: { key: "italic", label: "斜体", iconName: "italic" },
-  underline: { key: "underline", label: "下划线", iconName: "underline" },
-  strike: { key: "strike", label: "删除线", iconName: "strikethrough" },
-  superscript: { key: "superscript", label: "上标", iconName: "superscript" },
-  subscript: { key: "subscript", label: "下标", iconName: "subscript" },
-  foreColor: { key: "foreColor", label: "字体颜色", iconName: "fontColor", menu: true },
-  backColor: { key: "backColor", label: "背景颜色", iconName: "backgroundColor", menu: true },
-  hr: { key: "hr", label: "分割线", iconName: "divider" },
-  selectAll: { key: "selectAll", label: "全选", iconName: "selectAll" },
-  removeFormat: { key: "removeFormat", label: "清除格式", iconName: "clearFormat" },
-  indent: { key: "indent", label: "增加缩进", iconName: "indentRight" },
-  outdent: { key: "outdent", label: "减少缩进", iconName: "indentLeft" },
-  justifyLeft: { key: "justifyLeft", label: "左对齐", iconName: "alignLeft" },
-  justifyCenter: { key: "justifyCenter", label: "居中对齐", iconName: "alignCenter" },
-  justifyRight: { key: "justifyRight", label: "右对齐", iconName: "alignRight" },
-  orderedList: { key: "orderedList", label: "有序列表", iconName: "orderedList" },
-  unorderedList: { key: "unorderedList", label: "无序列表", iconName: "unorderedList" },
-  table: { key: "table", label: "表格", iconName: "table", menu: true },
-  quote: { key: "quote", label: "添加引用", iconName: "quote" },
-  code: { key: "code", label: "添加代码", iconName: "code" },
-  formula: { key: "formula", label: "数学公式", iconName: "mathFormula" },
-  emoji: { key: "emoji", label: "表情", iconName: "emoji", menu: true },
-  preview: { key: "preview", label: "预览", iconName: "preview" },
-  ai: { key: "ai", label: "AI", iconName: "ai", menu: true }
+  image: { key: "image", labelKey: "toolbar.image", iconName: "uploadImage", menu: true },
+  video: { key: "video", labelKey: "toolbar.video", iconName: "uploadVideo" },
+  importWord: { key: "importWord", labelKey: "toolbar.importWord", iconName: "word" },
+  fullscreen: { key: "fullscreen", labelKey: "toolbar.fullscreen", iconName: "fullscreen" },
+  link: { key: "link", labelKey: "toolbar.link", iconName: "link" },
+  unlink: { key: "unlink", labelKey: "toolbar.unlink", iconName: "unlink" },
+  undo: { key: "undo", labelKey: "toolbar.undo", iconName: "undo" },
+  redo: { key: "redo", labelKey: "toolbar.redo", iconName: "redo" },
+  bold: { key: "bold", labelKey: "toolbar.bold", iconName: "bold" },
+  italic: { key: "italic", labelKey: "toolbar.italic", iconName: "italic" },
+  underline: { key: "underline", labelKey: "toolbar.underline", iconName: "underline" },
+  strike: { key: "strike", labelKey: "toolbar.strike", iconName: "strikethrough" },
+  superscript: { key: "superscript", labelKey: "toolbar.superscript", iconName: "superscript" },
+  subscript: { key: "subscript", labelKey: "toolbar.subscript", iconName: "subscript" },
+  foreColor: { key: "foreColor", labelKey: "toolbar.foreColor", iconName: "fontColor", menu: true },
+  backColor: { key: "backColor", labelKey: "toolbar.backColor", iconName: "backgroundColor", menu: true },
+  hr: { key: "hr", labelKey: "toolbar.hr", iconName: "divider" },
+  selectAll: { key: "selectAll", labelKey: "toolbar.selectAll", iconName: "selectAll" },
+  removeFormat: { key: "removeFormat", labelKey: "toolbar.removeFormat", iconName: "clearFormat" },
+  indent: { key: "indent", labelKey: "toolbar.indent", iconName: "indentRight" },
+  outdent: { key: "outdent", labelKey: "toolbar.outdent", iconName: "indentLeft" },
+  justifyLeft: { key: "justifyLeft", labelKey: "toolbar.justifyLeft", iconName: "alignLeft" },
+  justifyCenter: { key: "justifyCenter", labelKey: "toolbar.justifyCenter", iconName: "alignCenter" },
+  justifyRight: { key: "justifyRight", labelKey: "toolbar.justifyRight", iconName: "alignRight" },
+  orderedList: { key: "orderedList", labelKey: "toolbar.orderedList", iconName: "orderedList" },
+  unorderedList: { key: "unorderedList", labelKey: "toolbar.unorderedList", iconName: "unorderedList" },
+  table: { key: "table", labelKey: "toolbar.table", iconName: "table", menu: true },
+  quote: { key: "quote", labelKey: "toolbar.quote", iconName: "quote" },
+  code: { key: "code", labelKey: "toolbar.code", iconName: "code" },
+  formula: { key: "formula", labelKey: "toolbar.formula", iconName: "mathFormula" },
+  emoji: { key: "emoji", labelKey: "toolbar.emoji", iconName: "emoji", menu: true },
+  preview: { key: "preview", labelKey: "toolbar.preview", iconName: "preview" },
+  ai: { key: "ai", labelKey: "toolbar.ai", iconName: "ai", menu: true }
 };
 
 const DEFAULT_TOOLBAR = [
@@ -379,7 +381,10 @@ const DEFAULT_OPTIONS = {
   id: "",
   target: null,
   editorId: "",
-  placeholder: "请输入内容...",
+  locale: "zh-CN",
+  locales: {},
+  messages: {},
+  placeholder: "",
   height: 360,
   maxHeight: null,
   disabled: false,
@@ -400,10 +405,10 @@ const DEFAULT_OPTIONS = {
 };
 
 const DEFAULT_AI_PROMPTS = {
-  polishSystem: "你是富文本编辑助手。请只返回可以直接放入富文本编辑器的 HTML 片段，不要返回 Markdown，不要解释。保留原文含义、链接、图片、表格和代码块。",
-  polishUser: "请润色下面的富文本内容，优化表达和排版结构：\n{{html}}",
-  chatSystem: "你是富文本编辑助手。{{scopeText}}不要返回 Markdown，不要解释。保留用户未要求修改的事实、链接、图片、表格和代码块。",
-  chatUser: "用户指令：{{prompt}}\n\n当前内容：\n{{targetHtml}}"
+  polishSystem: getLocaleValue(zhCN, "aiPrompts.polishSystem"),
+  polishUser: getLocaleValue(zhCN, "aiPrompts.polishUser"),
+  chatSystem: getLocaleValue(zhCN, "aiPrompts.chatSystem"),
+  chatUser: getLocaleValue(zhCN, "aiPrompts.chatUser")
 };
 
 // 通用钳制函数：菜单定位、颜色拖拽、尺寸计算等都会复用。
@@ -415,6 +420,13 @@ function clamp(value, min, max) {
 // 这里放在编辑器核心兜底，可以避免某个 Vue/React 封装层误传 undefined 后把默认值覆盖掉。
 function normalizeEmojiGroups(groups) {
   return Array.isArray(groups) && groups.length ? groups : defaultEmojiGroups;
+}
+
+function localizeEmojiGroups(groups, t) {
+  return normalizeEmojiGroups(groups).map((group) => {
+    const label = t(`emoji.${group.key}`, group.label);
+    return { ...group, label };
+  });
 }
 
 function stripAiCodeFence(value) {
@@ -594,16 +606,18 @@ function normalizeToolbarConfig(toolbar = DEFAULT_TOOLBAR, toolbarExtensionMap =
 }
 
 // 生成工具栏中的下拉类按钮，比如字体、字号、段落格式。
-function createComboboxHtml(key) {
+function createComboboxHtml(key, t) {
   const item = COMBOBOX_ITEMS[key];
   if (!item) {
     return "";
   }
+  const label = t(item.labelKey);
+  const defaultLabel = t(item.defaultLabelKey);
 
   return `
     <div class="javaex-editor-combobox ${item.widthClass || ""}" data-combobox="${item.key}">
-      <button type="button" class="javaex-editor-combobox-label" data-menu-toggle="${item.menu}" tooltip-pos="down" tooltip="${escapeAttribute(item.label)}">
-        <i data-label="${item.key}">${escapeHtml(item.defaultLabel)}</i>
+      <button type="button" class="javaex-editor-combobox-label" data-menu-toggle="${item.menu}" tooltip-pos="down" tooltip="${escapeAttribute(label)}">
+        <i data-label="${item.key}">${escapeHtml(defaultLabel)}</i>
         <span class="icon javaex-editor-caret" aria-hidden="true">${renderIconSvg("chevronDown")}</span>
       </button>
     </div>
@@ -611,12 +625,13 @@ function createComboboxHtml(key) {
 }
 
 // 生成普通工具按钮，比如加粗、图片、预览等。
-function createToolHtml(key) {
+function createToolHtml(key, t) {
   const item = TOOLBAR_ITEM_MAP[key];
   if (!item) {
     return "";
   }
-  return `<button type="button" class="javaex-editor-tool" data-tool="${item.key}" ${item.menu ? `data-menu-toggle="${item.key}"` : ""} tooltip-pos="down" tooltip="${escapeAttribute(item.label)}"><span class="icon" aria-hidden="true">${renderIconSvg(item.iconName)}</span></button>`;
+  const label = t(item.labelKey);
+  return `<button type="button" class="javaex-editor-tool" data-tool="${item.key}" ${item.menu ? `data-menu-toggle="${item.key}"` : ""} tooltip-pos="down" tooltip="${escapeAttribute(label)}"><span class="icon" aria-hidden="true">${renderIconSvg(item.iconName)}</span></button>`;
 }
 
 // 生成业务扩展挂到工具栏后的按钮。
@@ -637,17 +652,17 @@ function createExtensionToolHtml(key, toolbarExtensionMap = new Map()) {
 }
 
 // 根据配置项类型决定生成分隔线、下拉按钮还是普通按钮。
-function createToolbarEntryHtml(key, toolbarExtensionMap = new Map()) {
+function createToolbarEntryHtml(key, toolbarExtensionMap = new Map(), t) {
   if (key === "separator") {
     return `<span class="javaex-editor-separator"></span>`;
   }
   if (COMBOBOX_ITEMS[key]) {
-    return createComboboxHtml(key);
+    return createComboboxHtml(key, t);
   }
   if (toolbarExtensionMap.has(key)) {
     return createExtensionToolHtml(key, toolbarExtensionMap);
   }
-  return createToolHtml(key);
+  return createToolHtml(key, t);
 }
 
 // 生成简单菜单项按钮，图片来源面板等场景会复用。
@@ -661,29 +676,29 @@ function createContextMenuItemHtml(label, action, value, shortcut = "", disabled
 }
 
 // 表格右键菜单结构较长，单独提成函数，避免 render 方法过于臃肿。
-function createTableContextMenuHtml() {
+function createTableContextMenuHtml(t) {
   return `
-    ${createContextMenuItemHtml("复制", "table-action", "copy", "Ctrl+C", true)}
-    ${createContextMenuItemHtml("剪切", "table-action", "cut", "Ctrl+X", true)}
-    ${createContextMenuItemHtml("粘贴", "table-action", "paste", "Ctrl+V")}
+    ${createContextMenuItemHtml(t("tableContext.copy"), "table-action", "copy", "Ctrl+C", true)}
+    ${createContextMenuItemHtml(t("tableContext.cut"), "table-action", "cut", "Ctrl+X", true)}
+    ${createContextMenuItemHtml(t("tableContext.paste"), "table-action", "paste", "Ctrl+V")}
     <div class="javaex-editor-context-divider"></div>
     <div class="javaex-editor-context-submenu">
       <button type="button" class="javaex-editor-context-item javaex-editor-context-item-arrow">
-        <span>表格</span>
+        <span>${escapeHtml(t("tableContext.table"))}</span>
         <small class="javaex-editor-context-arrow" aria-hidden="true">${renderIconSvg("chevronRight")}</small>
       </button>
       <div class="javaex-editor-context-menu javaex-editor-context-submenu-panel">
-        ${createContextMenuItemHtml("行标题（第1行背景色）", "table-action", "row-header")}
-        ${createContextMenuItemHtml("列标题（第1列背景色）", "table-action", "col-header")}
-        ${createContextMenuItemHtml("行标题加粗", "table-action", "row-header-bold")}
-        ${createContextMenuItemHtml("列标题加粗", "table-action", "col-header-bold")}
+        ${createContextMenuItemHtml(t("tableContext.rowHeader"), "table-action", "row-header")}
+        ${createContextMenuItemHtml(t("tableContext.colHeader"), "table-action", "col-header")}
+        ${createContextMenuItemHtml(t("tableContext.rowHeaderBold"), "table-action", "row-header-bold")}
+        ${createContextMenuItemHtml(t("tableContext.colHeaderBold"), "table-action", "col-header-bold")}
         <div class="javaex-editor-context-divider"></div>
-        ${createContextMenuItemHtml("在上方插入行", "table-action", "row-above")}
-        ${createContextMenuItemHtml("在下方插入行", "table-action", "row-below")}
-        ${createContextMenuItemHtml("删除此行", "table-action", "row-remove")}
-        ${createContextMenuItemHtml("在左侧插入列", "table-action", "col-left")}
-        ${createContextMenuItemHtml("在右侧插入列", "table-action", "col-right")}
-        ${createContextMenuItemHtml("删除此列", "table-action", "col-remove")}
+        ${createContextMenuItemHtml(t("tableContext.rowAbove"), "table-action", "row-above")}
+        ${createContextMenuItemHtml(t("tableContext.rowBelow"), "table-action", "row-below")}
+        ${createContextMenuItemHtml(t("tableContext.rowRemove"), "table-action", "row-remove")}
+        ${createContextMenuItemHtml(t("tableContext.colLeft"), "table-action", "col-left")}
+        ${createContextMenuItemHtml(t("tableContext.colRight"), "table-action", "col-right")}
+        ${createContextMenuItemHtml(t("tableContext.colRemove"), "table-action", "col-remove")}
       </div>
     </div>
   `;
@@ -739,6 +754,8 @@ export class JavaexEditor {
     this.options.emojiGroups = normalizeEmojiGroups(this.options.emojiGroups);
     this.options.extensions = Array.isArray(this.options.extensions) ? this.options.extensions : [];
     this.options.imageUploader = this.options.imageUploader || createLegacyImageUploader(this.options.image);
+    this.localeConfig = resolveLocaleConfig(this.options.locale, this.options.locales, this.options.messages);
+    this.options.emojiGroups = localizeEmojiGroups(this.options.emojiGroups, (key, fallback) => this.t(key, fallback));
 
     this.host = resolveTarget(target, this.options);
     this.options.editorId = this.options.editorId || this.options.id || this.host.id || "javaex-editor";
@@ -790,10 +807,170 @@ export class JavaexEditor {
     this.resetInitialIdleState();
   }
 
+  t(key, fallback = "") {
+    return getLocaleValue(this.localeConfig.messages, key, fallback);
+  }
+
+  tf(key, payload = {}, fallback = "") {
+    return formatLocaleText(this.t(key, fallback), payload);
+  }
+
+  getLocale() {
+    return this.localeConfig.name;
+  }
+
+  setLocale(locale, messages = {}) {
+    this.options.locale = locale;
+    this.options.messages = messages || {};
+    this.localeConfig = resolveLocaleConfig(this.options.locale, this.options.locales, this.options.messages);
+    this.options.emojiGroups = localizeEmojiGroups(this.options.emojiGroups, (key, fallback) => this.t(key, fallback));
+    this.refreshLocaleText();
+  }
+
+  refreshLocaleText() {
+    if (!this.host) {
+      return;
+    }
+
+    Object.values(TOOLBAR_ITEM_MAP).forEach((item) => {
+      const button = this.host.querySelector(`[data-tool="${item.key}"]:not([data-extension-tool])`);
+      if (button) {
+        button.setAttribute("tooltip", this.t(item.labelKey));
+      }
+    });
+    Object.values(COMBOBOX_ITEMS).forEach((item) => {
+      const button = this.host.querySelector(`[data-combobox="${item.key}"] .javaex-editor-combobox-label`);
+      if (button) {
+        button.setAttribute("tooltip", this.t(item.labelKey));
+      }
+    });
+
+    if (this.editor && !this.options.placeholder) {
+      this.editor.dataset.placeholder = this.t("placeholder.editor");
+    }
+    if (this.markdownEditor) {
+      this.markdownEditor.placeholder = this.t("placeholder.markdown");
+    }
+
+    const foreColorPanel = this.menuPanels?.get("foreColor");
+    const backColorPanel = this.menuPanels?.get("backColor");
+    if (foreColorPanel) {
+      foreColorPanel.innerHTML = renderColorMenuHtml("foreColor", this.t("colors.defaultColor"), "defaultColor", (key, fallback) => this.t(key, fallback));
+    }
+    if (backColorPanel) {
+      backColorPanel.innerHTML = renderColorMenuHtml("backColor", this.t("colors.clearBackground"), "clearBackgroundColor", (key, fallback) => this.t(key, fallback));
+    }
+    const imagePanel = this.menuPanels?.get("image");
+    if (imagePanel) {
+      imagePanel.innerHTML = `
+        ${createMenuButtonHtml(this.t("menu.uploadLocalImage"), "image-source", "local")}
+        ${createMenuButtonHtml(this.t("menu.uploadRemoteImage"), "image-source", "remote")}
+      `;
+    }
+
+    const tableTitle = this.menuPanels?.get("table")?.querySelector(".javaex-editor-panel-title");
+    if (tableTitle) {
+      tableTitle.textContent = this.t("menu.tablePickerTitle");
+    }
+    const aiTitle = this.menuPanels?.get("ai")?.querySelector(".javaex-editor-panel-title");
+    if (aiTitle) {
+      aiTitle.textContent = this.t("menu.aiPanelTitle");
+    }
+    if (this.tableContextMenu) {
+      this.tableContextMenu.innerHTML = createTableContextMenuHtml((key, fallback) => this.t(key, fallback));
+    }
+    this.refreshDialogLocaleText();
+    this.renderEmojiTabs();
+    this.renderAiActions();
+    this.updateActiveStates();
+    this.hideUploadMask();
+  }
+
+  refreshDialogLocaleText() {
+    const setText = (root, selector, text) => {
+      const node = root?.querySelector(selector);
+      if (node) {
+        node.textContent = text;
+      }
+    };
+    const setPlaceholder = (root, selector, text) => {
+      const node = root?.querySelector(selector);
+      if (node) {
+        node.placeholder = text;
+      }
+    };
+    const setFooter = (root, submitName, okText = this.t("common.ok")) => {
+      const submit = root?.querySelector(`[data-dialog-submit="${submitName}"]`);
+      const submitLabel = submit?.querySelector("span:not(.icon)");
+      if (submitLabel) {
+        submitLabel.textContent = okText;
+      } else if (submit) {
+        submit.textContent = okText;
+      }
+      root?.querySelectorAll(".javaex-editor-dialog-footer [data-dialog-close]").forEach((button) => {
+        button.textContent = this.t("common.cancel");
+      });
+    };
+
+    this.initializeDialogChrome();
+    setText(this.previewDialogMask, ".javaex-editor-dialog-title", this.t("dialog.contentPreview"));
+    setText(this.splitPreviewPane, ".javaex-editor-dialog-title", this.t("dialog.previewPane"));
+
+    const link = this.dialogs?.get("link");
+    setText(link, ".javaex-editor-dialog-title", this.t("dialog.linkTitle"));
+    setText(link, ".javaex-editor-form-row:nth-child(1) .javaex-editor-form-label", this.t("dialog.linkHref"));
+    setText(link, ".javaex-editor-form-row:nth-child(2) .javaex-editor-form-label", this.t("dialog.linkText"));
+    setPlaceholder(link, "[data-ref='linkHref']", this.t("placeholder.linkHref"));
+    setPlaceholder(link, "[data-ref='linkText']", this.t("placeholder.linkText"));
+    setFooter(link, "link");
+
+    const video = this.dialogs?.get("video");
+    setText(video, ".javaex-editor-dialog-title", this.t("dialog.videoTitle"));
+    setText(video, "[data-video-mode='url']", this.t("dialog.videoUrlMode"));
+    setText(video, "[data-video-mode='embed']", this.t("dialog.videoEmbedMode"));
+    setText(video, ".javaex-editor-form-row:nth-child(2) .javaex-editor-form-label", this.t("dialog.videoUrl"));
+    setText(video, ".javaex-editor-form-row:nth-child(3) .javaex-editor-form-label", this.t("dialog.videoName"));
+    setText(video, "[data-ref='videoEmbedRow'] .javaex-editor-form-label", this.t("dialog.videoEmbed"));
+    setPlaceholder(video, "[data-ref='videoUrl']", this.t("placeholder.videoUrl"));
+    setPlaceholder(video, "[data-ref='videoTitle']", this.t("placeholder.videoTitle"));
+    setPlaceholder(video, "[data-ref='videoEmbedCode']", this.t("placeholder.videoEmbed"));
+    setFooter(video, "video");
+
+    const remoteImage = this.dialogs?.get("remote-image");
+    setText(remoteImage, ".javaex-editor-dialog-title", this.t("dialog.remoteImageTitle"));
+    setText(remoteImage, ".javaex-editor-form-label", this.t("dialog.remoteImageUrl"));
+    setPlaceholder(remoteImage, "[data-ref='remoteImageUrl']", this.t("placeholder.remoteImageUrl"));
+    setFooter(remoteImage, "remote-image");
+
+    const formula = this.dialogs?.get("formula");
+    setText(formula, ".javaex-editor-dialog-title", this.t("dialog.formulaTitle"));
+    setText(formula, ".javaex-editor-form-row:nth-child(1) .javaex-editor-form-label", this.t("dialog.formulaSource"));
+    setText(formula, ".javaex-editor-form-row:nth-child(2) .javaex-editor-form-label", this.t("dialog.formulaDisplay"));
+    setPlaceholder(formula, "[data-ref='formulaSource']", this.t("placeholder.formulaSource"));
+    setFooter(formula, "formula");
+    const formulaLabels = formula?.querySelectorAll(".javaex-editor-form-radio span") || [];
+    if (formulaLabels[0]) formulaLabels[0].textContent = this.t("dialog.formulaInline");
+    if (formulaLabels[1]) formulaLabels[1].textContent = this.t("dialog.formulaBlock");
+
+    const aiChat = this.dialogs?.get("ai-chat");
+    setText(aiChat, ".javaex-editor-dialog-title", this.t("dialog.aiChatTitle"));
+    setText(aiChat, ".javaex-editor-form-label", this.t("dialog.aiChatPrompt"));
+    setPlaceholder(aiChat, "[data-ref='aiChatPrompt']", this.t("placeholder.aiChatPrompt"));
+    setFooter(aiChat, "ai-chat-send", this.t("common.send"));
+
+    const colorPicker = this.dialogs?.get("color-picker");
+    setFooter(colorPicker, "color-picker");
+    if (this.colorDialogTitle) {
+      this.colorDialogTitle.textContent = this.t("colors.dialogTitle");
+    }
+  }
+
   // 渲染编辑器的整体静态结构。
   // 包括工具栏、编辑区、预览区、菜单面板、弹窗、上传遮罩、草稿提示和轻提示层。
   render() {
-    const toolbarHtml = this.toolbarSchema.map((item) => createToolbarEntryHtml(item, this.toolbarExtensionMap)).join("");
+    const t = (key, fallback) => this.t(key, fallback);
+    const toolbarHtml = this.toolbarSchema.map((item) => createToolbarEntryHtml(item, this.toolbarExtensionMap, t)).join("");
+    const editorPlaceholder = this.options.placeholder || t("placeholder.editor");
 
     this.host.innerHTML = `
       <div class="javaex-editor-editor">
@@ -809,13 +986,13 @@ export class JavaexEditor {
 
         <div class="javaex-editor-body">
           <div class="javaex-editor-body-inner">
-            <div class="javaex-editor-body-container" data-ref="editor" contenteditable="true" spellcheck="true" data-placeholder="${escapeAttribute(this.options.placeholder)}"></div>
-            <textarea class="javaex-editor-markdown-editor" data-ref="markdownEditor" placeholder="请输入 Markdown 内容..."></textarea>
+            <div class="javaex-editor-body-container" data-ref="editor" contenteditable="true" spellcheck="true" data-placeholder="${escapeAttribute(editorPlaceholder)}"></div>
+            <textarea class="javaex-editor-markdown-editor" data-ref="markdownEditor" placeholder="${escapeAttribute(t("placeholder.markdown"))}"></textarea>
           </div>
           <div class="javaex-editor-preview-pane" data-ref="splitPreviewPane">
             <div class="javaex-editor-dialog-top">
-              <div class="javaex-editor-dialog-title">预览</div>
-              <button type="button" class="javaex-editor-dialog-close" data-close-preview="split">关闭</button>
+              <div class="javaex-editor-dialog-title">${escapeHtml(t("dialog.previewPane"))}</div>
+              <button type="button" class="javaex-editor-dialog-close" data-close-preview="split">${escapeHtml(t("common.close"))}</button>
             </div>
             <div class="javaex-editor-preview-body javaex-editor-preview-html" data-ref="splitPreviewHtml"></div>
           </div>
@@ -827,11 +1004,11 @@ export class JavaexEditor {
         <div class="javaex-editor-menu javaex-editor-combobox-menu" data-menu-panel="font"><ul class="javaex-editor-menu-list">${FONT_OPTIONS.map((item) => `<li class="javaex-editor-combobox-item" data-menu-action="font" data-label="${escapeAttribute(item.label)}" data-value="${escapeAttribute(item.value)}"><label class="javaex-editor-combobox-item-label">${escapeHtml(item.label)}</label></li>`).join("")}</ul></div>
         <div class="javaex-editor-menu javaex-editor-combobox-menu" data-menu-panel="size"><ul class="javaex-editor-menu-list">${SIZE_OPTIONS.map((item) => `<li class="javaex-editor-combobox-item" data-menu-action="size" data-label="${escapeAttribute(item.label)}" data-value="${escapeAttribute(item.px)}"><label class="javaex-editor-combobox-item-label">${escapeHtml(item.label)}</label></li>`).join("")}</ul></div>
         <div class="javaex-editor-menu javaex-editor-combobox-menu" data-menu-panel="format"><ul class="javaex-editor-menu-list">${FORMAT_OPTIONS.map((item) => `<li class="javaex-editor-combobox-item" data-menu-action="format" data-label="${escapeAttribute(item.label)}" data-value="${escapeAttribute(item.tag)}"><label class="javaex-editor-combobox-item-label" style="${FORMAT_PREVIEW_STYLE[item.tag]}">${escapeHtml(item.label)}</label></li>`).join("")}</ul></div>
-        <div class="javaex-editor-menu javaex-editor-color-menu" data-menu-panel="foreColor">${renderColorMenuHtml("foreColor", "默认颜色", "defaultColor")}</div>
-        <div class="javaex-editor-menu javaex-editor-color-menu" data-menu-panel="backColor">${renderColorMenuHtml("backColor", "清除背景色", "clearBackgroundColor")}</div>
+        <div class="javaex-editor-menu javaex-editor-color-menu" data-menu-panel="foreColor">${renderColorMenuHtml("foreColor", t("colors.defaultColor"), "defaultColor", t)}</div>
+        <div class="javaex-editor-menu javaex-editor-color-menu" data-menu-panel="backColor">${renderColorMenuHtml("backColor", t("colors.clearBackground"), "clearBackgroundColor", t)}</div>
         <div class="javaex-editor-menu javaex-editor-image-menu" data-menu-panel="image">
-          ${createMenuButtonHtml("上传本地图片", "image-source", "local")}
-          ${createMenuButtonHtml("上传远程图片", "image-source", "remote")}
+          ${createMenuButtonHtml(t("menu.uploadLocalImage"), "image-source", "local")}
+          ${createMenuButtonHtml(t("menu.uploadRemoteImage"), "image-source", "remote")}
         </div>
         <div class="javaex-editor-menu" data-menu-panel="emoji">
           <div class="javaex-editor-panel javaex-editor-panel-emoji">
@@ -841,24 +1018,24 @@ export class JavaexEditor {
         </div>
         <div class="javaex-editor-menu" data-menu-panel="table">
           <div class="javaex-editor-panel javaex-editor-panel-table">
-            <div class="javaex-editor-panel-title">拖拽选择表格尺寸</div>
+            <div class="javaex-editor-panel-title">${escapeHtml(t("menu.tablePickerTitle"))}</div>
             <div class="javaex-editor-table-picker" data-ref="tablePicker"></div>
             <div class="javaex-editor-panel-foot" data-ref="tableFoot">2 x 2</div>
           </div>
         </div>
         <div class="javaex-editor-menu" data-menu-panel="ai">
           <div class="javaex-editor-panel javaex-editor-panel-ai">
-            <div class="javaex-editor-panel-title">AI / 扩展动作</div>
+            <div class="javaex-editor-panel-title">${escapeHtml(t("menu.aiPanelTitle"))}</div>
             <div data-ref="aiActions"></div>
           </div>
         </div>
-        <div class="javaex-editor-context-menu javaex-editor-table-context-menu" data-ref="tableContextMenu">${createTableContextMenuHtml()}</div>
+        <div class="javaex-editor-context-menu javaex-editor-table-context-menu" data-ref="tableContextMenu">${createTableContextMenuHtml(t)}</div>
 
         <div class="javaex-editor-dialog-mask" data-dialog="preview">
           <div class="javaex-editor-dialog javaex-editor-dialog-preview">
             <div class="javaex-editor-dialog-top">
-              <div class="javaex-editor-dialog-title">内容预览</div>
-              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="preview">关闭</button>
+              <div class="javaex-editor-dialog-title">${escapeHtml(t("dialog.contentPreview"))}</div>
+              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="preview">${escapeHtml(t("common.close"))}</button>
             </div>
             <div class="javaex-editor-preview-body javaex-editor-preview-html" data-ref="dialogPreviewHtml"></div>
           </div>
@@ -867,22 +1044,22 @@ export class JavaexEditor {
         <div class="javaex-editor-dialog-mask" data-dialog="link">
           <div class="javaex-editor-dialog">
             <div class="javaex-editor-dialog-top">
-              <div class="javaex-editor-dialog-title">添加超链接</div>
-              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="link">关闭</button>
+              <div class="javaex-editor-dialog-title">${escapeHtml(t("dialog.linkTitle"))}</div>
+              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="link">${escapeHtml(t("common.close"))}</button>
             </div>
             <div class="javaex-editor-dialog-content">
               <div class="javaex-editor-form-row">
-                <label class="javaex-editor-form-label">链接地址</label>
-                <input class="javaex-editor-form-input" data-ref="linkHref" type="text" placeholder="请输入链接地址" />
+                <label class="javaex-editor-form-label">${escapeHtml(t("dialog.linkHref"))}</label>
+                <input class="javaex-editor-form-input" data-ref="linkHref" type="text" placeholder="${escapeAttribute(t("placeholder.linkHref"))}" />
               </div>
               <div class="javaex-editor-form-row">
-                <label class="javaex-editor-form-label">链接标题</label>
-                <input class="javaex-editor-form-input" data-ref="linkText" type="text" placeholder="请输入链接标题" />
+                <label class="javaex-editor-form-label">${escapeHtml(t("dialog.linkText"))}</label>
+                <input class="javaex-editor-form-input" data-ref="linkText" type="text" placeholder="${escapeAttribute(t("placeholder.linkText"))}" />
               </div>
             </div>
             <div class="javaex-editor-dialog-footer">
-              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-primary" data-dialog-submit="link">确定</button>
-              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="link">取消</button>
+              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-primary" data-dialog-submit="link">${escapeHtml(t("common.ok"))}</button>
+              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="link">${escapeHtml(t("common.cancel"))}</button>
             </div>
           </div>
         </div>
@@ -890,30 +1067,30 @@ export class JavaexEditor {
         <div class="javaex-editor-dialog-mask" data-dialog="video">
           <div class="javaex-editor-dialog">
             <div class="javaex-editor-dialog-top">
-              <div class="javaex-editor-dialog-title">添加视频</div>
-              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="video">关闭</button>
+              <div class="javaex-editor-dialog-title">${escapeHtml(t("dialog.videoTitle"))}</div>
+              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="video">${escapeHtml(t("common.close"))}</button>
             </div>
             <div class="javaex-editor-dialog-content">
               <div class="javaex-editor-form-mode-switch">
-                <button type="button" class="active" data-video-mode="url">视频地址</button>
-                <button type="button" data-video-mode="embed">播放代码</button>
+                <button type="button" class="active" data-video-mode="url">${escapeHtml(t("dialog.videoUrlMode"))}</button>
+                <button type="button" data-video-mode="embed">${escapeHtml(t("dialog.videoEmbedMode"))}</button>
               </div>
               <div class="javaex-editor-form-row">
-                <label class="javaex-editor-form-label">视频地址</label>
-                <input class="javaex-editor-form-input" data-ref="videoUrl" type="text" placeholder="请输入视频地址" />
+                <label class="javaex-editor-form-label">${escapeHtml(t("dialog.videoUrl"))}</label>
+                <input class="javaex-editor-form-input" data-ref="videoUrl" type="text" placeholder="${escapeAttribute(t("placeholder.videoUrl"))}" />
               </div>
               <div class="javaex-editor-form-row">
-                <label class="javaex-editor-form-label">视频标题</label>
-                <input class="javaex-editor-form-input" data-ref="videoTitle" type="text" placeholder="请输入视频标题" />
+                <label class="javaex-editor-form-label">${escapeHtml(t("dialog.videoName"))}</label>
+                <input class="javaex-editor-form-input" data-ref="videoTitle" type="text" placeholder="${escapeAttribute(t("placeholder.videoTitle"))}" />
               </div>
               <div class="javaex-editor-form-row" data-ref="videoEmbedRow" hidden>
-                <label class="javaex-editor-form-label">播放代码 / iframe 地址</label>
-                <textarea class="javaex-editor-form-input javaex-editor-form-textarea" data-ref="videoEmbedCode" placeholder="请输入视频网站提供的 iframe / embed 播放代码，或直接输入 iframe 地址"></textarea>
+                <label class="javaex-editor-form-label">${escapeHtml(t("dialog.videoEmbed"))}</label>
+                <textarea class="javaex-editor-form-input javaex-editor-form-textarea" data-ref="videoEmbedCode" placeholder="${escapeAttribute(t("placeholder.videoEmbed"))}"></textarea>
               </div>
             </div>
             <div class="javaex-editor-dialog-footer">
-              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-primary" data-dialog-submit="video">确定</button>
-              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="video">取消</button>
+              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-primary" data-dialog-submit="video">${escapeHtml(t("common.ok"))}</button>
+              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="video">${escapeHtml(t("common.cancel"))}</button>
             </div>
           </div>
         </div>
@@ -921,18 +1098,18 @@ export class JavaexEditor {
         <div class="javaex-editor-dialog-mask" data-dialog="remote-image">
           <div class="javaex-editor-dialog">
             <div class="javaex-editor-dialog-top">
-              <div class="javaex-editor-dialog-title">添加远程图片</div>
-              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="remote-image">关闭</button>
+              <div class="javaex-editor-dialog-title">${escapeHtml(t("dialog.remoteImageTitle"))}</div>
+              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="remote-image">${escapeHtml(t("common.close"))}</button>
             </div>
             <div class="javaex-editor-dialog-content">
               <div class="javaex-editor-form-row">
-                <label class="javaex-editor-form-label">远程图片地址</label>
-                <input class="javaex-editor-form-input" data-ref="remoteImageUrl" type="text" placeholder="请输入远程图片地址" />
+                <label class="javaex-editor-form-label">${escapeHtml(t("dialog.remoteImageUrl"))}</label>
+                <input class="javaex-editor-form-input" data-ref="remoteImageUrl" type="text" placeholder="${escapeAttribute(t("placeholder.remoteImageUrl"))}" />
               </div>
             </div>
             <div class="javaex-editor-dialog-footer">
-              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-primary" data-dialog-submit="remote-image">确定</button>
-              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="remote-image">取消</button>
+              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-primary" data-dialog-submit="remote-image">${escapeHtml(t("common.ok"))}</button>
+              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="remote-image">${escapeHtml(t("common.cancel"))}</button>
             </div>
           </div>
         </div>
@@ -940,25 +1117,25 @@ export class JavaexEditor {
         <div class="javaex-editor-dialog-mask" data-dialog="formula">
           <div class="javaex-editor-dialog">
             <div class="javaex-editor-dialog-top">
-              <div class="javaex-editor-dialog-title">插入数学公式</div>
-              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="formula">关闭</button>
+              <div class="javaex-editor-dialog-title">${escapeHtml(t("dialog.formulaTitle"))}</div>
+              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="formula">${escapeHtml(t("common.close"))}</button>
             </div>
             <div class="javaex-editor-dialog-content">
               <div class="javaex-editor-form-row">
-                <label class="javaex-editor-form-label">LaTeX 公式</label>
-                <textarea class="javaex-editor-form-input javaex-editor-form-textarea" data-ref="formulaSource" placeholder="例如：\\frac{a+b}{c}"></textarea>
+                <label class="javaex-editor-form-label">${escapeHtml(t("dialog.formulaSource"))}</label>
+                <textarea class="javaex-editor-form-input javaex-editor-form-textarea" data-ref="formulaSource" placeholder="${escapeAttribute(t("placeholder.formulaSource"))}"></textarea>
               </div>
               <div class="javaex-editor-form-row">
-                <label class="javaex-editor-form-label">展示方式</label>
+                <label class="javaex-editor-form-label">${escapeHtml(t("dialog.formulaDisplay"))}</label>
                 <select class="javaex-editor-form-input javaex-editor-form-select" data-ref="formulaDisplay">
-                  <option value="inline">行内公式</option>
-                  <option value="block">块级公式</option>
+                  <option value="inline">${escapeHtml(t("dialog.formulaInline"))}</option>
+                  <option value="block">${escapeHtml(t("dialog.formulaBlock"))}</option>
                 </select>
               </div>
             </div>
             <div class="javaex-editor-dialog-footer">
-              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-primary" data-dialog-submit="formula">确定</button>
-              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="formula">取消</button>
+              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-primary" data-dialog-submit="formula">${escapeHtml(t("common.ok"))}</button>
+              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="formula">${escapeHtml(t("common.cancel"))}</button>
             </div>
           </div>
         </div>
@@ -966,18 +1143,18 @@ export class JavaexEditor {
         <div class="javaex-editor-dialog-mask" data-dialog="ai-chat">
           <div class="javaex-editor-dialog javaex-editor-dialog-ai-chat">
             <div class="javaex-editor-dialog-top">
-              <div class="javaex-editor-dialog-title">AI 对话</div>
-              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="ai-chat">关闭</button>
+              <div class="javaex-editor-dialog-title">${escapeHtml(t("dialog.aiChatTitle"))}</div>
+              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="ai-chat">${escapeHtml(t("common.close"))}</button>
             </div>
             <div class="javaex-editor-dialog-content">
               <div class="javaex-editor-form-row">
-                <label class="javaex-editor-form-label">修改指令</label>
-                <textarea class="javaex-editor-form-input javaex-editor-form-textarea" data-ref="aiChatPrompt" placeholder="例如：把这段话改得更正式，保留原有结构"></textarea>
+                <label class="javaex-editor-form-label">${escapeHtml(t("dialog.aiChatPrompt"))}</label>
+                <textarea class="javaex-editor-form-input javaex-editor-form-textarea" data-ref="aiChatPrompt" placeholder="${escapeAttribute(t("placeholder.aiChatPrompt"))}"></textarea>
               </div>
             </div>
             <div class="javaex-editor-dialog-footer">
-              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-send" data-dialog-submit="ai-chat-send"><span class="icon" aria-hidden="true">${renderIconSvg("send")}</span><span>发送</span></button>
-              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="ai-chat">取消</button>
+              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-send" data-dialog-submit="ai-chat-send"><span class="icon" aria-hidden="true">${renderIconSvg("send")}</span><span>${escapeHtml(t("common.send"))}</span></button>
+              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="ai-chat">${escapeHtml(t("common.cancel"))}</button>
             </div>
           </div>
         </div>
@@ -985,8 +1162,8 @@ export class JavaexEditor {
         <div class="javaex-editor-dialog-mask" data-dialog="color-picker">
           <div class="javaex-editor-dialog javaex-editor-dialog-color-picker">
             <div class="javaex-editor-dialog-top">
-              <div class="javaex-editor-dialog-title" data-ref="colorDialogTitle">颜色选择</div>
-              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="color-picker">关闭</button>
+              <div class="javaex-editor-dialog-title" data-ref="colorDialogTitle">${escapeHtml(t("colors.dialogTitle"))}</div>
+              <button type="button" class="javaex-editor-dialog-close" data-dialog-close="color-picker">${escapeHtml(t("common.close"))}</button>
             </div>
             <div class="javaex-editor-dialog-content">
               <div class="javaex-editor-color-dialog">
@@ -1022,8 +1199,8 @@ export class JavaexEditor {
               </div>
             </div>
             <div class="javaex-editor-dialog-footer">
-              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-primary" data-dialog-submit="color-picker">确定</button>
-              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="color-picker">取消</button>
+              <button type="button" class="javaex-editor-dialog-btn javaex-editor-dialog-btn-primary" data-dialog-submit="color-picker">${escapeHtml(t("common.ok"))}</button>
+              <button type="button" class="javaex-editor-dialog-btn" data-dialog-close="color-picker">${escapeHtml(t("common.cancel"))}</button>
             </div>
           </div>
         </div>
@@ -1031,14 +1208,14 @@ export class JavaexEditor {
         <div class="javaex-editor-upload-mask" data-ref="uploadMask">
           <div class="javaex-editor-upload-panel">
             <div class="javaex-editor-upload-spinner"></div>
-            <div data-ref="uploadText">图片上传中...</div>
+            <div data-ref="uploadText">${escapeHtml(t("tips.imageUploading"))}</div>
           </div>
         </div>
 
         <div class="javaex-editor-draft-tip" data-ref="draftTip">
-          <span>检测到上次页面未正常关闭。</span>
-          <button type="button" class="javaex-editor-draft-link blue" data-draft-action="recover">恢复内容</button>
-          <button type="button" class="javaex-editor-draft-link red" data-draft-action="cancel">取消</button>
+          <span>${escapeHtml(t("draft.found"))}</span>
+          <button type="button" class="javaex-editor-draft-link blue" data-draft-action="recover">${escapeHtml(t("draft.recover"))}</button>
+          <button type="button" class="javaex-editor-draft-link red" data-draft-action="cancel">${escapeHtml(t("draft.cancel"))}</button>
         </div>
 
         <div class="javaex-editor-tip" data-ref="tip"></div>
@@ -1119,8 +1296,8 @@ export class JavaexEditor {
   initializeDialogChrome() {
     Array.from(this.host.querySelectorAll(".javaex-editor-dialog-close")).forEach((button) => {
       button.textContent = "×";
-      button.setAttribute("aria-label", "关闭");
-      button.setAttribute("title", "关闭");
+      button.setAttribute("aria-label", this.t("common.close"));
+      button.setAttribute("title", this.t("common.close"));
     });
   }
 
@@ -1137,11 +1314,11 @@ export class JavaexEditor {
     wrapper.innerHTML = `
       <label class="javaex-editor-form-radio">
         <input type="radio" name="formulaDisplay-${escapeAttribute(this.options.editorId)}" data-formula-display value="inline" checked />
-        <span>行内公式</span>
+        <span>${escapeHtml(this.t("dialog.formulaInline"))}</span>
       </label>
       <label class="javaex-editor-form-radio">
         <input type="radio" name="formulaDisplay-${escapeAttribute(this.options.editorId)}" data-formula-display value="block" />
-        <span>块级公式</span>
+        <span>${escapeHtml(this.t("dialog.formulaBlock"))}</span>
       </label>
     `;
 
@@ -1285,7 +1462,7 @@ export class JavaexEditor {
     if (menuToggle) {
       event.preventDefault();
       if (this.currentEditMode === "markdown" && menuToggle.dataset.menuToggle !== "ai") {
-        this.showTip("Markdown 模式下请直接编辑文本", true);
+        this.showTip(this.t("tips.markdownOnly"), true);
         return;
       }
       if (this.currentEditMode === "html") {
@@ -1331,7 +1508,7 @@ export class JavaexEditor {
       event.preventDefault();
       if (emojiItem.dataset.emojiType === "image") {
         const src = emojiItem.dataset.emojiValue;
-        const alt = emojiItem.dataset.emojiLabel || "表情";
+        const alt = emojiItem.dataset.emojiLabel || this.t("emoji.alt");
         this.insertHtml(`<img class="javaex-editor-meme-emoji" src="${escapeAttribute(src)}" alt="${escapeAttribute(alt)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`);
       } else {
         this.insertHtml(escapeHtml(emojiItem.dataset.emojiValue));
@@ -1543,7 +1720,7 @@ export class JavaexEditor {
     }
 
     if (this.currentEditMode === "markdown" && !["preview", "ai", "importWord", "fullscreen"].includes(key)) {
-      this.showTip("Markdown 模式下请直接编辑文本", true);
+      this.showTip(this.t("tips.markdownOnly"), true);
       return;
     }
 
@@ -1622,7 +1799,7 @@ export class JavaexEditor {
         this.exec("insertUnorderedList");
         break;
       case "quote":
-        this.insertHtml("<blockquote>引用内容</blockquote><p><br /></p>");
+        this.insertHtml(`<blockquote>${escapeHtml(this.t("insert.quote"))}</blockquote><p><br /></p>`);
         break;
       case "code":
         this.insertHtml('<pre><code class="hljs"><br /></code></pre><p><br /></p>');
@@ -1644,7 +1821,7 @@ export class JavaexEditor {
 
     if (this.currentEditMode === "markdown" && action !== "ai") {
       this.closeMenus();
-      this.showTip("Markdown 模式下请直接编辑文本", true);
+      this.showTip(this.t("tips.markdownOnly"), true);
       return;
     }
 
@@ -1919,7 +2096,7 @@ export class JavaexEditor {
     const currentColor = this.currentColorDialogTarget === "backColor"
       ? (normalizeHexColor(this.selectedBackColor || "#fff799", "#fff799"))
       : (normalizeHexColor(this.selectedForeColor || "#1677ff", "#1677ff"));
-    this.colorDialogTitle.textContent = this.currentColorDialogTarget === "backColor" ? "背景颜色" : "字体颜色";
+    this.colorDialogTitle.textContent = this.currentColorDialogTarget === "backColor" ? this.t("dialog.colorBackTitle") : this.t("dialog.colorForeTitle");
     this.setColorDialogValue(currentColor);
     this.openDialog("color-picker");
   }
@@ -2057,7 +2234,7 @@ export class JavaexEditor {
   applyCustomColor(action, value) {
     const color = normalizeHexColor(value, "");
     if (!color) {
-      this.showTip("请输入正确的颜色值", true);
+      this.showTip(this.t("tips.invalidColor"), true);
       return;
     }
 
@@ -2095,7 +2272,7 @@ export class JavaexEditor {
     if (name === "link") {
       const href = this.linkHref.value.trim();
       if (!href) {
-        this.showTip("请输入链接地址", true);
+        this.showTip(this.t("tips.linkRequired"), true);
         return;
       }
       const text = (this.linkText.value || href).trim();
@@ -2110,7 +2287,7 @@ export class JavaexEditor {
       if (this.currentVideoMode === "embed") {
         const embedCode = this.videoEmbedCode.value.trim();
         if (!embedCode) {
-          this.showTip("请输入播放代码", true);
+          this.showTip(this.t("tips.videoEmbedRequired"), true);
           return;
         }
         const embedHtml = embedCode.includes("<")
@@ -2121,10 +2298,10 @@ export class JavaexEditor {
         const url = this.videoUrl.value.trim();
         const title = this.videoTitle.value.trim();
         if (!url) {
-          this.showTip("请输入视频地址", true);
+          this.showTip(this.t("tips.videoUrlRequired"), true);
           return;
         }
-        this.insertHtml(`<figure class="javaex-editor-edit-video"><video controls width="640" height="400" src="${escapeAttribute(url)}" title="${escapeAttribute(title)}">您的浏览器不支持 video 标签。</video>${title ? `<figcaption>${escapeHtml(title)}</figcaption>` : ""}</figure><p><br /></p>`);
+        this.insertHtml(`<figure class="javaex-editor-edit-video"><video controls width="640" height="400" src="${escapeAttribute(url)}" title="${escapeAttribute(title)}">${escapeHtml(this.t("insert.videoUnsupported"))}</video>${title ? `<figcaption>${escapeHtml(title)}</figcaption>` : ""}</figure><p><br /></p>`);
       }
       this.closeDialog("video");
       return;
@@ -2133,7 +2310,7 @@ export class JavaexEditor {
     if (name === "remote-image") {
       const url = this.remoteImageUrl.value.trim();
       if (!url) {
-        this.showTip("请输入远程图片地址", true);
+        this.showTip(this.t("tips.remoteImageRequired"), true);
         return;
       }
       const imageHtml = `<figure class="javaex-editor-edit-image"><img src="${escapeAttribute(url)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" /></figure>`;
@@ -2143,7 +2320,7 @@ export class JavaexEditor {
       }
       this.remoteImageUrl.value = "";
       this.closeDialog("remote-image");
-      this.showTip("已插入远程图片");
+      this.showTip(this.t("tips.remoteImageInserted"));
       return;
     }
 
@@ -2151,7 +2328,7 @@ export class JavaexEditor {
       const source = this.formulaSource.value.trim();
       const display = this.formulaDisplayOptions.find((input) => input.checked)?.value === "block" ? "block" : "inline";
       if (!source) {
-        this.showTip("请输入数学公式", true);
+        this.showTip(this.t("tips.formulaRequired"), true);
         return;
       }
 
@@ -2184,9 +2361,9 @@ export class JavaexEditor {
         }
 
         this.closeDialog("formula");
-        this.showTip("已插入数学公式");
+        this.showTip(this.t("tips.formulaInserted"));
       } catch {
-        this.showTip("数学公式插入失败", true);
+        this.showTip(this.t("tips.formulaFailed"), true);
       }
     }
 
@@ -2211,12 +2388,12 @@ export class JavaexEditor {
 
     const showUploadTip = this.options.image?.isShowTip !== false;
     if (showUploadTip) {
-      this.showUploadMask(files.length > 1 ? `正在上传 ${files.length} 张图片...` : "图片上传中...");
+      this.showUploadMask(files.length > 1 ? this.tf("tips.imageUploadingCount", { count: files.length }) : this.t("tips.imageUploading"));
     }
     try {
       await this.uploadFiles(files);
     } catch {
-      this.showTip("图片上传失败", true);
+      this.showTip(this.t("tips.imageUploadFailed"), true);
     } finally {
       event.target.value = "";
       if (showUploadTip) {
@@ -2232,13 +2409,13 @@ export class JavaexEditor {
       return;
     }
 
-    this.showUploadMask("正在导入 Word...");
+    this.showUploadMask(this.t("tips.wordImporting"));
     try {
       const result = await importWordFile(file);
       this.setHtml(polishHtml(result.html), true);
-      this.showTip("Word 导入成功");
+      this.showTip(this.t("tips.wordImportSuccess"));
     } catch (error) {
-      this.showTip(error?.message || "Word 导入失败", true);
+      this.showTip(error?.message || this.t("tips.wordImportFailed"), true);
     } finally {
       event.target.value = "";
       this.hideUploadMask();
@@ -2289,7 +2466,7 @@ export class JavaexEditor {
     }).join("<p><br /></p>");
 
     this.insertHtml(html);
-    this.showTip(`已插入 ${items.length} 张图片`);
+    this.showTip(this.tf("tips.imageInsertedCount", { count: items.length }));
   }
 
   // 行内样式（字体、字号、颜色等）在“选区折叠”的情况下，需要插入零宽字符载体，
@@ -2525,12 +2702,12 @@ export class JavaexEditor {
           this.placeCaretInside(this.activeTableCell);
           this.hideTableContextMenu();
           this.syncOutput();
-          this.showTip("已粘贴单元格内容");
+          this.showTip(this.t("tips.cellPasted"));
           return;
         }
       } catch {}
 
-      this.showTip("当前浏览器不允许直接粘贴", true);
+      this.showTip(this.t("tips.pasteDenied"), true);
       return;
     }
 
@@ -2544,9 +2721,9 @@ export class JavaexEditor {
       this.activeTableCell.innerHTML = "<br />";
       this.placeCaretInside(this.activeTableCell);
       this.syncOutput();
-      this.showTip("已剪切单元格内容");
+      this.showTip(this.t("tips.cellCut"));
     } else {
-      this.showTip("已复制单元格内容");
+      this.showTip(this.t("tips.cellCopied"));
     }
 
     this.hideTableContextMenu();
@@ -2678,6 +2855,16 @@ export class JavaexEditor {
   }
 
   // 根据当前选中的表情分组渲染表情按钮列表。
+  renderEmojiTabs() {
+    const activeKey = this.emojiGrid?.dataset.emojiGroup || this.options.emojiGroups[0]?.key || defaultEmojiGroups[0].key;
+    const tabs = this.host.querySelector('[data-ref="emojiTabs"]');
+    if (!tabs) {
+      return;
+    }
+    tabs.innerHTML = this.options.emojiGroups.map((group) => `<button type="button" ${group.key === activeKey ? 'class="active"' : ""} data-emoji-tab="${escapeAttribute(group.key)}">${escapeHtml(group.label)}</button>`).join("");
+    this.renderEmojiGrid(activeKey);
+  }
+
   renderEmojiGrid(key) {
     Array.from(this.host.querySelectorAll("[data-emoji-tab]")).forEach((button) => {
       button.classList.toggle("active", button.dataset.emojiTab === key);
@@ -2701,8 +2888,8 @@ export class JavaexEditor {
     const actions = [];
     if (this.options.ai?.enabled !== false) {
       actions.push(
-        { key: "polish", label: "一键润色", description: "润色文字并优化 HTML 排版" },
-        { key: "chat", label: "AI 对话", description: "基于当前选区发起小范围修改对话" }
+        { key: "polish", label: this.t("aiActions.polish"), description: this.t("aiActions.polishDescription") },
+        { key: "chat", label: this.t("aiActions.chat"), description: this.t("aiActions.chatDescription") }
       );
     }
     const extensionActions = this.getExtensionActions();
@@ -2711,7 +2898,7 @@ export class JavaexEditor {
       actions.push({
         key: item.key,
         label: item.label,
-        description: item.description || item.title || "执行扩展动作"
+        description: item.description || item.title || this.t("aiActions.extensionDescription")
       });
     });
     this.aiActions.innerHTML = actions.map((item) => `<button type="button" class="javaex-editor-action" data-menu-action="ai" data-value="${item.key}"><span>${escapeHtml(item.label)}</span><small>${escapeHtml(item.description)}</small></button>`).join("");
@@ -2749,7 +2936,7 @@ export class JavaexEditor {
       return;
     }
     if (this.currentEditMode === "markdown" && extensionAction.allowMarkdown !== true) {
-      this.showTip("Markdown 模式下请直接编辑文本", true);
+      this.showTip(this.t("tips.markdownOnly"), true);
       return;
     }
 
@@ -2758,7 +2945,7 @@ export class JavaexEditor {
       await extensionAction.action(this.createContext());
     } catch (error) {
       console.error(error);
-      this.showTip("扩展动作执行失败", true);
+      this.showTip(this.t("tips.extensionFailed"), true);
     }
   }
 
@@ -2770,7 +2957,7 @@ export class JavaexEditor {
       try {
         await extensionAction.action(this.createContext());
       } catch {
-        this.showTip("扩展动作执行失败", true);
+        this.showTip(this.t("tips.extensionFailed"), true);
       }
       return;
     }
@@ -2793,14 +2980,17 @@ export class JavaexEditor {
         }
       }
     } catch {
-      this.showTip("AI 操作失败", true);
+      this.showTip(this.t("tips.aiFailed"), true);
     }
   }
 
   getAiPrompts() {
     const ai = this.options.ai || {};
     return {
-      ...DEFAULT_AI_PROMPTS,
+      polishSystem: this.t("aiPrompts.polishSystem", DEFAULT_AI_PROMPTS.polishSystem),
+      polishUser: this.t("aiPrompts.polishUser", DEFAULT_AI_PROMPTS.polishUser),
+      chatSystem: this.t("aiPrompts.chatSystem", DEFAULT_AI_PROMPTS.chatSystem),
+      chatUser: this.t("aiPrompts.chatUser", DEFAULT_AI_PROMPTS.chatUser),
       ...(ai.prompts || {}),
       ...(ai.polishSystemPrompt ? { polishSystem: ai.polishSystemPrompt } : {}),
       ...(ai.polishUserPrompt ? { polishUser: ai.polishUserPrompt } : {}),
@@ -2820,7 +3010,7 @@ export class JavaexEditor {
 
     const hasSelection = Boolean((payload.selectionHtml || "").trim() || (payload.selectionText || "").trim());
     const targetHtml = hasSelection ? (payload.selectionHtml || payload.selectionText) : (payload.html || "");
-    const scopeText = hasSelection ? "只处理选中的内容，并只返回替换选区用的 HTML 片段。" : "处理整篇富文本，并只返回完整 HTML 片段。";
+    const scopeText = hasSelection ? this.t("aiPrompts.scopeSelection") : this.t("aiPrompts.scopeAll");
     const chatPayload = {
       ...payload,
       hasSelection,
@@ -2884,12 +3074,12 @@ export class JavaexEditor {
   async sendAiChat() {
     const prompt = this.aiChatPrompt.value.trim();
     if (!prompt) {
-      this.showTip("请输入修改指令", true);
+      this.showTip(this.t("tips.aiPromptRequired"), true);
       return;
     }
 
     if (typeof this.options.ai?.chat !== "function" && typeof this.options.ai?.request !== "function") {
-      this.showTip("请先配置 ai.request 回调", true);
+      this.showTip(this.t("tips.aiRequestRequired"), true);
       return;
     }
 
@@ -2903,7 +3093,7 @@ export class JavaexEditor {
       markdown: this.getMarkdown()
     };
 
-    this.showUploadMask("AI 正在生成内容...");
+    this.showUploadMask(this.t("tips.aiGenerating"));
     try {
       const result = typeof this.options.ai?.chat === "function"
         ? await this.options.ai.chat(payload, this.createContext())
@@ -2922,10 +3112,10 @@ export class JavaexEditor {
         this.applyAiChatResult();
       } else {
         this.closeDialog("ai-chat");
-        this.showTip("AI 已完成处理");
+        this.showTip(this.t("tips.aiDone"));
       }
     } catch {
-      this.showTip("AI 对话失败", true);
+      this.showTip(this.t("tips.aiChatFailed"), true);
     } finally {
       this.hideUploadMask();
     }
@@ -2935,7 +3125,7 @@ export class JavaexEditor {
   // 如果之前记录了选区，则只替换选区；否则直接整篇覆盖。
   applyAiChatResult() {
     if (!this.aiChatResult) {
-      this.showTip("请先发送对话并获得结果", true);
+      this.showTip(this.t("tips.aiResultRequired"), true);
       return;
     }
 
@@ -2950,13 +3140,13 @@ export class JavaexEditor {
     } else {
       this.setHtml(this.aiChatResult);
       this.closeDialog("ai-chat");
-      this.showTip("已应用 AI 对话结果");
+      this.showTip(this.t("tips.aiApplied"));
       return;
     }
 
     this.insertHtml(this.aiChatResult);
     this.closeDialog("ai-chat");
-    this.showTip("已应用 AI 对话结果");
+    this.showTip(this.t("tips.aiApplied"));
   }
 
   // 切换编辑器全屏态。
@@ -3107,9 +3297,9 @@ export class JavaexEditor {
     if (oldTimer) {
       clearTimeout(oldTimer);
     }
-    if (text === "复制成功") {
+    if (text === this.t("codeCopy.copied")) {
       const timer = window.setTimeout(() => {
-        button.textContent = "复制";
+        button.textContent = this.t("codeCopy.copy");
         PREVIEW_COPY_TIMERS.delete(button);
       }, 2000);
       PREVIEW_COPY_TIMERS.set(button, timer);
@@ -3124,7 +3314,7 @@ export class JavaexEditor {
       button.className = "javaex-editor-codecopy-btn";
       pre.appendChild(button);
     }
-    button.textContent = "复制";
+    button.textContent = this.t("codeCopy.copy");
     button.onclick = async (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -3132,9 +3322,9 @@ export class JavaexEditor {
       this.selectPreviewCodeContent(codeElement);
       try {
         await this.copyPreviewCodeText(codeText);
-        this.updatePreviewCopyButton(button, "复制成功");
+        this.updatePreviewCopyButton(button, this.t("codeCopy.copied"));
       } catch {
-        this.updatePreviewCopyButton(button, "复制");
+        this.updatePreviewCopyButton(button, this.t("codeCopy.copy"));
       }
     };
   }
@@ -3861,7 +4051,7 @@ export class JavaexEditor {
     });
     const fullscreenButton = this.host.querySelector('[data-tool="fullscreen"]');
     fullscreenButton?.classList.toggle("is-active", this.isFullscreen);
-    fullscreenButton?.setAttribute("tooltip", this.isFullscreen ? "取消全屏" : "全屏");
+    fullscreenButton?.setAttribute("tooltip", this.isFullscreen ? this.t("toolbar.exitFullscreen") : this.t("toolbar.fullscreen"));
     this.updateColorIndicators();
   }
 
@@ -3874,7 +4064,7 @@ export class JavaexEditor {
   // 隐藏上传遮罩，并恢复默认提示文案。
   hideUploadMask() {
     this.uploadMask.classList.remove("is-open");
-    this.uploadText.textContent = "图片上传中...";
+    this.uploadText.textContent = this.t("tips.imageUploading");
   }
 
   // 关闭表格右键菜单。
@@ -3920,7 +4110,7 @@ export class JavaexEditor {
       if (localContent) {
         this.setHtml(localContent);
         this.draftTip.classList.remove("is-open");
-        this.showTip("已恢复未保存内容");
+        this.showTip(this.t("tips.draftRecovered"));
       }
     } catch {}
   }
@@ -4232,6 +4422,8 @@ export class JavaexEditor {
       text: this.getText(),
       markdown: this.getMarkdown(),
       focus: () => this.focus(),
+      getLocale: () => this.getLocale(),
+      setLocale: (locale, messages) => this.setLocale(locale, messages),
       getEditMode: () => this.getEditMode(),
       getHtml: () => this.getHtml(),
       getText: () => this.getText(),

@@ -971,7 +971,7 @@ body.javaex-editor-body-fullscreen {
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 24px;
   background: rgba(15, 23, 42, 0.24);
   backdrop-filter: blur(6px);
 }
@@ -981,7 +981,7 @@ body.javaex-editor-body-fullscreen {
 }
 
 .javaex-editor-dialog {
-  width: min(400px, 100%);
+  width: min(460px, 100%);
   border: 1px solid var(--javaex-border-panel, #e7edf5);
   border-radius: var(--javaex-radius-lg, 18px);
   background: var(--javaex-bg-white-soft-3, rgba(255, 255, 255, 0.98));
@@ -999,11 +999,11 @@ body.javaex-editor-body-fullscreen {
 }
 
 .javaex-editor-dialog-ai-chat {
-  width: min(420px, 100%);
+  width: min(500px, 100%);
 }
 
 .javaex-editor-dialog-color-picker {
-  width: min(520px, calc(100vw - 32px));
+  width: min(640px, calc(100vw - 48px));
 }
 
 /* 各类弹窗表单 */
@@ -1012,7 +1012,7 @@ body.javaex-editor-body-fullscreen {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 8px 12px;
+  padding: 12px 18px;
   border-bottom: 1px solid var(--javaex-border-section, #edf2f7);
   background: linear-gradient(135deg, var(--javaex-bg-surface-top, #fbfdff) 0%, var(--javaex-bg-button-soft, #f6faff) 100%);
 }
@@ -1043,24 +1043,24 @@ body.javaex-editor-body-fullscreen {
 }
 
 .javaex-editor-dialog-content {
-  padding: 12px 12px 6px;
+  padding: 20px 22px 12px;
 }
 
 .javaex-editor-form-row + .javaex-editor-form-row {
-  margin-top: 10px;
+  margin-top: 14px;
 }
 
 .javaex-editor-form-label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 7px;
   color: var(--javaex-text-secondary, #606266);
   font-size: 12px;
 }
 
 .javaex-editor-form-input {
   width: 100%;
-  height: 30px;
-  padding: 0 9px;
+  height: 34px;
+  padding: 0 11px;
   border: 1px solid var(--javaex-control-border-color, #e6eefc);
   border-radius: var(--javaex-radius-md, 12px);
   outline: none;
@@ -1079,8 +1079,8 @@ body.javaex-editor-body-fullscreen {
 }
 
 .javaex-editor-form-textarea {
-  min-height: 80px;
-  padding: 8px 9px;
+  min-height: 104px;
+  padding: 10px 11px;
   resize: vertical;
   line-height: 1.6;
 }
@@ -1121,13 +1121,13 @@ body.javaex-editor-body-fullscreen {
 
 .javaex-editor-form-mode-switch {
   display: inline-flex;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .javaex-editor-form-mode-switch button {
-  height: 26px;
-  padding: 0 10px;
+  height: 30px;
+  padding: 0 12px;
   border: 1px solid var(--javaex-border-color-soft, #d6e5ff);
   border-radius: 999px;
   background: var(--javaex-bg-button-soft, #f6faff);
@@ -1144,8 +1144,8 @@ body.javaex-editor-body-fullscreen {
 
 .javaex-editor-color-dialog {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 190px;
-  gap: 14px;
+  grid-template-columns: minmax(260px, 1fr) 210px;
+  gap: 18px;
   align-items: start;
 }
 
@@ -1157,7 +1157,7 @@ body.javaex-editor-body-fullscreen {
   --javaex-editor-picker-hue: #1677ff;
   position: relative;
   width: 100%;
-  height: 220px;
+  height: 250px;
   border: 1px solid var(--javaex-border-color-soft, #d6e5ff);
   border-radius: 12px;
   background:
@@ -1191,7 +1191,7 @@ body.javaex-editor-body-fullscreen {
 .javaex-editor-color-dialog-hue {
   position: relative;
   width: 16px;
-  height: 220px;
+  height: 250px;
   border: 1px solid var(--javaex-border-color-soft, #d6e5ff);
   border-radius: 10px;
   background: linear-gradient(
@@ -1258,14 +1258,14 @@ body.javaex-editor-body-fullscreen {
 .javaex-editor-dialog-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 6px;
-  padding: 6px 12px 12px;
+  gap: 8px;
+  padding: 10px 22px 20px;
 }
 
 .javaex-editor-dialog-btn {
-  min-width: 56px;
-  height: 26px;
-  padding: 0 10px;
+  min-width: 68px;
+  height: 32px;
+  padding: 0 14px;
   border: 1px solid var(--javaex-border-color-soft, #d6e5ff);
   border-radius: var(--javaex-radius-sm, 10px);
   background: var(--javaex-bg-button-soft, #f6faff);

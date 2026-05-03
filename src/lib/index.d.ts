@@ -5,6 +5,14 @@ export interface EmojiGroup {
   items: Array<string | { label?: string; value: string; type?: "text" | "image" }>;
 }
 
+export type JavaexLocaleMessages = Record<string, unknown>;
+
+export interface JavaexLocaleConfig {
+  name?: string;
+  locale?: string;
+  messages?: JavaexLocaleMessages;
+}
+
 /** 图片上传器返回的标准对象结构。 */
 export interface UploadImageItem {
   url: string;
@@ -37,6 +45,8 @@ export interface EditorPayload {
 /** 提供给扩展、AI、上传器的上下文对象。 */
 export interface EditorContext extends EditorPayload {
   focus: () => void;
+  getLocale: () => string;
+  setLocale: (locale: string | JavaexLocaleConfig, messages?: JavaexLocaleMessages) => void;
   getHtml: () => string;
   getText: () => string;
   getMarkdown: () => string;
@@ -74,6 +84,12 @@ export interface JavaexEditorOptions {
   target?: string | HTMLElement;
   /** 目标节点 id，作为 target 的便捷写法。 */
   id?: string;
+  /** 界面语言，默认 zh-CN。内置支持 zh-CN 和 en-US。 */
+  locale?: string | JavaexLocaleConfig;
+  /** 自定义语言包，例如 { "ja-JP": { toolbar: { bold: "太字" } } }。 */
+  locales?: Record<string, JavaexLocaleMessages>;
+  /** 当前语言的增量覆盖文案。 */
+  messages?: JavaexLocaleMessages;
   /** 编辑器实例 id，用于草稿隔离等场景。 */
   editorId?: string;
   /** 初始 HTML 内容。 */
@@ -151,6 +167,10 @@ export declare class JavaexEditor {
   focus(): void;
   /** 获取当前编辑模式。 */
   getEditMode(): "html" | "markdown";
+  /** 获取当前语言名称。 */
+  getLocale(): string;
+  /** 切换当前语言；第二个参数可传入该语言的增量文案。 */
+  setLocale(locale: string | JavaexLocaleConfig, messages?: JavaexLocaleMessages): void;
   /** 切换编辑模式。 */
   setEditMode(mode: "html" | "markdown"): void;
   /** 获取当前 HTML。 */
@@ -193,6 +213,14 @@ export declare const javaexEditor: {
 
 /** 默认表情分组数据。 */
 export declare const defaultEmojiGroups: EmojiGroup[];
+export declare const zhCN: JavaexLocaleMessages;
+export declare const enUS: JavaexLocaleMessages;
+export declare const defaultLocales: Record<string, JavaexLocaleMessages>;
+export declare function mergeLocaleMessages(...sources: JavaexLocaleMessages[]): JavaexLocaleMessages;
+export declare function resolveLocaleConfig(locale?: string | JavaexLocaleConfig, locales?: Record<string, JavaexLocaleMessages>, messages?: JavaexLocaleMessages): {
+  name: string;
+  messages: JavaexLocaleMessages;
+};
 
 /** 把“名称|图片地址,名称|图片地址”解析成图片表情项。 */
 export declare function parseImageEmojiItems(value?: string): Array<{ type: "image"; label: string; value: string }>;

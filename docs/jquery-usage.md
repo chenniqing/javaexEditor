@@ -7,7 +7,6 @@
 使用打包后的文件：
 
 ```html
-<link rel="stylesheet" href="/static/javaex-editor/style.css" />
 <script src="/static/javaex-editor/javaex-editor.umd.cjs"></script>
 ```
 

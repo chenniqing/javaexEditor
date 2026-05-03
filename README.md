@@ -13,7 +13,6 @@ npm run build
 
 ```js
 import { createEditor, defaultEmojiGroups } from 'javaex-editor';
-import 'javaex-editor/dist/style.css';
 ```
 
 ## 基础用法

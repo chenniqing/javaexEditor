@@ -1,5 +1,6 @@
 import JavaexEditor, { createEditor, deleteTextEditorDraft } from "./core/JavaexEditor";
 import { defaultEmojiGroups } from "./utils/content";
+export { defaultLocales, enUS, mergeLocaleMessages, resolveLocaleConfig, zhCN } from "./i18n.js";
 export {
   createImageEmojiGroup,
   createPublicImageEmojiGroup,
