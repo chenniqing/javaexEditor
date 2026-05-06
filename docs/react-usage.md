@@ -5,7 +5,7 @@
 ## 安装
 
 ```bash
-npm install javaex-editor@1.0.0
+npm install javaex-editor@1.0.1
 ```
 
 ## 组件封装

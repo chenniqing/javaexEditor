@@ -7,7 +7,7 @@
 使用已经上传到七牛云的文件：
 
 ```html
-<script src="https://javaex.javaex.cn/javaexEditor/1.0.0/javaex-editor.umd.js"></script>
+<script src="https://javaex.javaex.cn/javaexEditor/1.0.1/javaex-editor.umd.js"></script>
 ```
 
 如果要自己托管，先在包项目中执行 `npm run build`，再把 `dist/javaex-editor.umd.js` 上传到自己的静态资源服务器。浏览器页面请使用 `.umd.js`，不要使用 `.umd.cjs`。

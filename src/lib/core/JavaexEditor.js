@@ -1399,6 +1399,7 @@ export class JavaexEditor {
     this.boundDocumentClick = (event) => this.handleDocumentClick(event);
     this.boundSelectionChange = () => this.handleSelectionChange();
     this.boundEditorInput = () => this.handleEditorInput();
+    this.boundEditorKeydown = (event) => this.handleEditorKeydown(event);
     this.boundEditorPaste = (event) => this.handleEditorPaste(event);
     this.boundEditorSelection = () => this.saveSelection();
     this.boundMarkdownInput = () => this.syncOutput();
@@ -1422,6 +1423,7 @@ export class JavaexEditor {
     this.host.addEventListener("click", this.boundRootClick);
     this.host.addEventListener("input", this.boundRootInput);
     this.editor.addEventListener("input", this.boundEditorInput);
+    this.editor.addEventListener("keydown", this.boundEditorKeydown);
     this.editor.addEventListener("paste", this.boundEditorPaste);
     this.editor.addEventListener("mouseup", this.boundEditorSelection);
     this.editor.addEventListener("keyup", this.boundEditorSelection);
@@ -1638,6 +1640,18 @@ export class JavaexEditor {
     this.syncOutput();
   }
 
+  // 在空引用块内按 Backspace/Delete 时，直接退出并删除引用容器。
+  // 否则首个 blockquote 没有前置段落，浏览器会把光标困在引用里，用户很难把它删掉。
+  handleEditorKeydown(event) {
+    if (this.currentEditMode !== "html" || !["Backspace", "Delete"].includes(event.key)) {
+      return;
+    }
+
+    if (this.removeBlankQuoteAtSelection()) {
+      event.preventDefault();
+    }
+  }
+
   // 代码块里粘贴内容时必须按纯文本处理。
   // Eclipse 等 IDE 会同时写入 text/html，浏览器默认粘贴 HTML 时可能丢掉源码换行。
   handleEditorPaste(event) {
@@ -1799,7 +1813,7 @@ export class JavaexEditor {
         this.exec("insertUnorderedList");
         break;
       case "quote":
-        this.insertHtml(`<blockquote>${escapeHtml(this.t("insert.quote"))}</blockquote><p><br /></p>`);
+        this.insertHtml(`<blockquote><p>${escapeHtml(this.t("insert.quote"))}</p></blockquote><p><br /></p>`);
         break;
       case "code":
         this.insertHtml('<pre><code class="hljs"><br /></code></pre><p><br /></p>');
@@ -2486,6 +2500,8 @@ export class JavaexEditor {
     });
 
     if (range.collapsed) {
+      // 折叠光标处的字体/字号选择只是“待输入格式”，必须标记为内部载体，避免空内容标准化把它当成空段落清掉。
+      span.setAttribute("data-javaex-inline-carrier", "true");
       const textNode = document.createTextNode("\u200b");
       span.appendChild(textNode);
       range.insertNode(span);
@@ -2574,16 +2590,20 @@ export class JavaexEditor {
 
     const currentBlock = this.findClosestBlock(range.startContainer);
     if (currentBlock && this.editor.contains(currentBlock) && this.isBlockElement(currentBlock)) {
+      const isPendingEmptyBlock = this.isBlankEditableBlock(currentBlock);
       const offset = this.getTextOffsetWithin(currentBlock, range.startContainer, range.startOffset);
       const replacement = document.createElement(tagName.toLowerCase());
       replacement.innerHTML = currentBlock.innerHTML || "<br />";
+      if (isPendingEmptyBlock) {
+        replacement.setAttribute("data-javaex-block-carrier", "true");
+      }
       currentBlock.replaceWith(replacement);
       this.placeCaretByTextOffset(replacement, offset);
       this.afterMutation();
       return;
     }
 
-    this.insertHtml(`<${tagName.toLowerCase()}><br /></${tagName.toLowerCase()}>`);
+    this.insertHtml(`<${tagName.toLowerCase()} data-javaex-block-carrier="true"><br /></${tagName.toLowerCase()}>`);
   }
 
   // 通过修改块级元素的 margin-left 来增减缩进。
@@ -3379,8 +3399,18 @@ export class JavaexEditor {
       return null;
     }
 
-    this.focus();
-    this.restoreSelection();
+    const savedRange = this.hasEditableRange(this.savedRange) ? this.savedRange.cloneRange() : null;
+    if (savedRange) {
+      // 弹窗提交时重新聚焦编辑区，浏览器可能临时把光标放到内容开头。
+      // 这里在 focus 前后都恢复一次已保存选区，避免链接、视频等插入操作跑到起始位置。
+      setSelectionRange(savedRange);
+      this.focus();
+      setSelectionRange(savedRange);
+      this.savedRange = savedRange.cloneRange();
+    } else {
+      this.focus();
+      this.restoreSelection();
+    }
 
     let range = getSelectionRange();
     if (this.hasEditableRange(range)) {
@@ -3528,8 +3558,10 @@ export class JavaexEditor {
 
   // 把弹窗打开前记录的选区恢复回 savedRange。
   restoreDialogSelection() {
-    if (this.dialogSelectionRange) {
-      this.savedRange = this.dialogSelectionRange.cloneRange();
+    if (this.hasEditableRange(this.dialogSelectionRange)) {
+      const range = this.dialogSelectionRange.cloneRange();
+      this.savedRange = range.cloneRange();
+      setSelectionRange(range);
     }
   }
 
@@ -3840,6 +3872,129 @@ export class JavaexEditor {
       : targetRange.startContainer;
   }
 
+  // 从当前光标节点向上寻找字体/字号的待输入载体。
+  // 如果已经在载体内部，就不需要再次调整浏览器选区。
+  findClosestPendingInlineCarrier(node) {
+    let current = node?.nodeType === Node.TEXT_NODE ? node.parentNode : node;
+    while (current && current !== this.editor) {
+      if (current.nodeType === Node.ELEMENT_NODE && current.dataset.javaexInlineCarrier === "true") {
+        return current;
+      }
+      current = current.parentNode;
+    }
+    return null;
+  }
+
+  // 从当前节点向上寻找空标题等块级待输入载体。
+  // 这类载体只存在于还没有真实文本时，输入后会作为普通块输出。
+  findClosestPendingBlockCarrier(node) {
+    const element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    const block = element?.closest?.("[data-javaex-block-carrier]");
+    return block && this.editor.contains(block) ? block : null;
+  }
+
+  // 找到某个后代节点在指定父节点下对应的直接子节点。
+  // 点击段落末尾时，浏览器给出的 offset 是父节点子节点索引，需要用它判断是否落在待输入载体之后。
+  getDirectChildWithin(parent, node) {
+    let current = node;
+    while (current && current.parentNode !== parent) {
+      current = current.parentNode;
+    }
+    return current?.parentNode === parent ? current : null;
+  }
+
+  // 用户选完字体/字号后再点编辑区，浏览器可能把光标放到载体旁边的普通段落位置。
+  // 如果点击位置仍是同一个空白块或载体之后，就把它视为继续使用刚才选择的待输入格式。
+  findPendingInlineCarrierForRange(range) {
+    if (!range?.collapsed || !this.hasEditableRange(range) || this.findClosestPendingInlineCarrier(range.startContainer)) {
+      return null;
+    }
+
+    const block = this.findClosestBlock(range.startContainer);
+    if (!block) {
+      return null;
+    }
+
+    const carriers = Array.from(block.querySelectorAll("[data-javaex-inline-carrier]"));
+    if (!carriers.length) {
+      return null;
+    }
+
+    if (this.isBlankEditableBlock(block)) {
+      return carriers[carriers.length - 1];
+    }
+
+    if (range.startContainer.nodeType === Node.TEXT_NODE) {
+      const textLength = range.startContainer.textContent?.length || 0;
+      if (range.startOffset < textLength) {
+        return null;
+      }
+
+      const anchorChild = this.getDirectChildWithin(block, range.startContainer);
+      const anchorIndex = anchorChild ? Array.prototype.indexOf.call(block.childNodes, anchorChild) : -1;
+      return carriers.slice().reverse().find((carrier) => {
+        const child = this.getDirectChildWithin(block, carrier);
+        const index = child ? Array.prototype.indexOf.call(block.childNodes, child) : -1;
+        return anchorIndex >= 0 && (index === anchorIndex || index === anchorIndex + 1);
+      }) || null;
+    }
+
+    if (range.startContainer !== block) {
+      return null;
+    }
+
+    return carriers.slice().reverse().find((carrier) => {
+      const child = this.getDirectChildWithin(block, carrier);
+      const index = child ? Array.prototype.indexOf.call(block.childNodes, child) : -1;
+      return index >= 0 && range.startOffset >= index;
+    }) || null;
+  }
+
+  // 把浏览器光标重新放回待输入载体内部。
+  // 这样后续输入会进入带样式的 span，工具栏也能从真实 computed style 读到正确字体/字号。
+  createRangeAtPendingInlineCarrier(carrier) {
+    if (!carrier) {
+      return null;
+    }
+
+    let textNode = Array.from(carrier.childNodes).find((child) => child.nodeType === Node.TEXT_NODE);
+    if (!textNode) {
+      textNode = document.createTextNode("\u200b");
+      carrier.appendChild(textNode);
+    }
+    if (!textNode.textContent.includes("\u200b")) {
+      textNode.textContent = `${textNode.textContent}\u200b`;
+    }
+
+    const range = document.createRange();
+    range.setStart(textNode, textNode.textContent.length);
+    range.collapse(true);
+    setSelectionRange(range);
+    this.savedRange = range.cloneRange();
+    return range;
+  }
+
+  // 修正点击编辑区后可能偏移到载体外侧的选区。
+  // 返回值会继续用于工具栏状态同步，避免刚选择的字体、字号、段落格式被普通样式覆盖。
+  restorePendingSelectionRange(range) {
+    if (!range?.collapsed || !this.hasEditableRange(range)) {
+      return range;
+    }
+
+    const inlineCarrier = this.findPendingInlineCarrierForRange(range);
+    if (inlineCarrier) {
+      return this.createRangeAtPendingInlineCarrier(inlineCarrier) || range;
+    }
+
+    const blockCarrier = this.findClosestPendingBlockCarrier(range.startContainer);
+    if (blockCarrier && this.isBlankEditableBlock(blockCarrier)) {
+      this.placeCaretInEmptyParagraph(blockCarrier);
+      return this.savedRange || range;
+    }
+
+    return range;
+  }
+
   getEffectiveBackgroundColor(node) {
     let current = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
     while (current && current !== this.root) {
@@ -3877,7 +4032,7 @@ export class JavaexEditor {
     if (this.currentEditMode !== "html") {
       return;
     }
-    const activeRange = range || getSelectionRange();
+    const activeRange = this.restorePendingSelectionRange(range || getSelectionRange());
     if (!activeRange || !this.editor.contains(activeRange.commonAncestorContainer)) {
       return;
     }
@@ -4217,16 +4372,42 @@ export class JavaexEditor {
     this.editor.classList.toggle("is-empty", !text && !/<(img|table|video|iframe|blockquote|pre)\b/i.test(html));
   }
 
+  // 递归移除待输入载体里的零宽占位符。
+  // 只改文本节点，不重写父节点 textContent，避免嵌套字体/字号载体在输出时丢失内层样式。
+  removeZeroWidthTextNodes(root) {
+    const textNodes = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let current = walker.nextNode();
+    while (current) {
+      textNodes.push(current);
+      current = walker.nextNode();
+    }
+    textNodes.forEach((node) => {
+      node.textContent = node.textContent?.replace(/\u200b/g, "") || "";
+      if (!node.textContent) {
+        node.remove();
+      }
+    });
+  }
+
   // 输出给回调、预览、外部 API 之前，要把仅用于保持输入状态的临时载体去掉。
   // 对外输出 HTML 前，清理掉仅用于保持输入状态的临时格式载体。
   getEditorHtmlForOutput() {
     const clone = this.editor.cloneNode(true);
-    Array.from(clone.querySelectorAll("[data-javaex-inline-carrier]")).forEach((node) => {
+    Array.from(clone.querySelectorAll("[data-javaex-inline-carrier]")).reverse().forEach((node) => {
       node.removeAttribute("data-javaex-inline-carrier");
       node.removeAttribute("data-javaex-inline-command");
-      node.textContent = node.textContent?.replace(/\u200b/g, "") || "";
+      this.removeZeroWidthTextNodes(node);
       if (!node.textContent && !node.children.length) {
         node.remove();
+      }
+    });
+    Array.from(clone.querySelectorAll("[data-javaex-block-carrier]")).forEach((node) => {
+      node.removeAttribute("data-javaex-block-carrier");
+      if (this.isBlankEditableBlock(node)) {
+        const paragraph = document.createElement("p");
+        paragraph.innerHTML = "<br />";
+        node.replaceWith(paragraph);
       }
     });
 
@@ -4243,20 +4424,67 @@ export class JavaexEditor {
     return html;
   }
 
-  // 判断某个节点是否可以视为“空段落”。
-  // 这类节点会在空内容标准化时被整理成 <p><br /></p>。
-  isBlankParagraphLike(node) {
+  // 判断某个块节点是否只有占位内容，没有真实文本或媒体。
+  // 字体、字号和标题的待输入载体会复用这个判断，确保空内容也能保留用户刚选的格式状态。
+  isBlankEditableBlock(node) {
     if (!node || node.nodeType !== Node.ELEMENT_NODE) {
       return false;
     }
 
-    if (!["P", "DIV"].includes(node.tagName)) {
+    if (!["P", "DIV", "H1", "H2", "H3", "H4", "H5", "H6"].includes(node.tagName)) {
       return false;
     }
 
     const html = sanitizeHtml(node.innerHTML || "");
     const text = htmlToText(html);
     return !text && !/<(img|table|video|iframe|blockquote|pre|hr|ul|ol)\b/i.test(html);
+  }
+
+  // 判断引用块是否已经没有真实内容。
+  // 空引用块需要允许 Backspace/Delete 直接移除，否则首个引用会把光标困住。
+  isBlankQuoteBlock(node) {
+    if (!node || node.nodeType !== Node.ELEMENT_NODE || node.tagName !== "BLOCKQUOTE") {
+      return false;
+    }
+
+    const html = sanitizeHtml(node.innerHTML || "");
+    const text = htmlToText(html);
+    return !text && !/<(img|table|video|iframe|blockquote|pre|hr|ul|ol)\b/i.test(html);
+  }
+
+  // 删除当前光标所在的空引用块，并把光标放到可继续输入的普通段落中。
+  removeBlankQuoteAtSelection() {
+    const range = getSelectionRange();
+    if (!range?.collapsed || !this.hasEditableRange(range)) {
+      return false;
+    }
+
+    const quote = this.findClosestTag(range.startContainer, ["BLOCKQUOTE"]);
+    if (!quote || !this.editor.contains(quote) || !this.isBlankQuoteBlock(quote)) {
+      return false;
+    }
+
+    let caretTarget = this.isBlankParagraphLike(quote.nextElementSibling) ? quote.nextElementSibling : null;
+    if (caretTarget) {
+      quote.remove();
+    } else {
+      caretTarget = document.createElement("p");
+      caretTarget.innerHTML = "<br />";
+      quote.replaceWith(caretTarget);
+    }
+
+    this.placeCaretInEmptyParagraph(caretTarget);
+    this.afterMutation();
+    return true;
+  }
+
+  // 判断某个节点是否可以视为“空段落”。
+  // 这类节点会在空内容标准化时被整理成 <p><br /></p>。
+  isBlankParagraphLike(node) {
+    if (!["P", "DIV"].includes(node?.tagName)) {
+      return false;
+    }
+    return this.isBlankEditableBlock(node);
   }
 
   // 判断当前末尾块后面是否需要补一个空段落来承接光标。
@@ -4355,8 +4583,9 @@ export class JavaexEditor {
     const text = htmlToText(html);
     const hasNonTextContent = /<(img|table|video|iframe|blockquote|pre|hr)\b/i.test(html);
     const hasPendingInlineCarrier = Boolean(this.editor.querySelector("[data-javaex-inline-carrier]"));
+    const hasPendingBlockCarrier = Boolean(this.editor.querySelector("[data-javaex-block-carrier]"));
 
-    if (text || hasNonTextContent || hasPendingInlineCarrier) {
+    if (text || hasNonTextContent || hasPendingInlineCarrier || hasPendingBlockCarrier) {
       return;
     }
 
@@ -4488,6 +4717,7 @@ export class JavaexEditor {
     this.host.removeEventListener("click", this.boundRootClick);
     this.host.removeEventListener("input", this.boundRootInput);
     this.editor.removeEventListener("input", this.boundEditorInput);
+    this.editor.removeEventListener("keydown", this.boundEditorKeydown);
     this.editor.removeEventListener("paste", this.boundEditorPaste);
     this.markdownEditor.removeEventListener("input", this.boundMarkdownInput);
     this.editor.removeEventListener("mouseup", this.boundEditorSelection);

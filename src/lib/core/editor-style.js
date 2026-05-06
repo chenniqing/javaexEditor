@@ -1418,7 +1418,24 @@ body.javaex-editor-body-fullscreen {
 .javaex-editor-body-container ol,
 .javaex-editor-preview-html ul,
 .javaex-editor-preview-html ol {
+  margin: 0 0 12px;
   padding-left: 40px;
+  list-style-position: outside;
+}
+
+.javaex-editor-body-container ul,
+.javaex-editor-preview-html ul {
+  list-style-type: disc;
+}
+
+.javaex-editor-body-container ol,
+.javaex-editor-preview-html ol {
+  list-style-type: decimal;
+}
+
+.javaex-editor-body-container li,
+.javaex-editor-preview-html li {
+  display: list-item;
 }
 
 .javaex-editor-body-container a,
@@ -1464,6 +1481,11 @@ body.javaex-editor-body-fullscreen {
   background: var(--javaex-bg-surface-soft, #f8fbff);
   border-left: 6px solid var(--javaex-color-primary, #4f8cff);
   border-radius: 0 var(--javaex-radius-md, 12px) var(--javaex-radius-md, 12px) 0;
+}
+
+.javaex-editor-body-container blockquote > p:last-child,
+.javaex-editor-preview-html blockquote > p:last-child {
+  margin-bottom: 0;
 }
 
 .javaex-editor-body-container pre,

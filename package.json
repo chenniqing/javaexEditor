@@ -1,6 +1,6 @@
 {
   "name": "javaex-editor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A framework-agnostic rich text editor inspired by javaex.",
   "type": "module",
   "main": "./dist/javaex-editor.umd.cjs",

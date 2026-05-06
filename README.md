@@ -7,7 +7,7 @@
 ## 安装
 
 ```bash
-npm install javaex-editor@1.0.0
+npm install javaex-editor@1.0.1
 ```
 
 ESM 项目中使用：
@@ -30,7 +30,7 @@ CDN 或静态资源方式使用：
 
 ```html
 <div id="editor"></div>
-<script src="https://javaex.javaex.cn/javaexEditor/1.0.0/javaex-editor.umd.js"></script>
+<script src="https://javaex.javaex.cn/javaexEditor/1.0.1/javaex-editor.umd.js"></script>
 <script>
   var editor = javaexEditor.editor({
     id: "editor",

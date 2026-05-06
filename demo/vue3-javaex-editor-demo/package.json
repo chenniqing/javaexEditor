@@ -9,7 +9,7 @@
     "preview": "vite preview --host 127.0.0.1 --port 4102"
   },
   "dependencies": {
-    "javaex-editor": "1.0.0",
+    "javaex-editor": "^1.0.1",
     "vue": "^3.4.38"
   },
   "devDependencies": {
